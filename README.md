@@ -1,6 +1,38 @@
 # Atlassian CLI
 
-A .NET console application that provides a command-line interface to interact with self-hosted Confluence and Jira (on-prem) instances via their REST APIs.
+A .NET tool that provides a command-line interface to interact with self-hosted Confluence and Jira (on-prem) instances via their REST APIs.
+
+## Installation
+
+### Global Tool Installation
+
+Install the tool globally using the .NET CLI:
+
+```bash
+dotnet tool install --global AtlassianCli
+```
+
+After installation, you can use the `atlassiancli` command from anywhere:
+
+```bash
+atlassiancli --help
+```
+
+### Update
+
+To update to the latest version:
+
+```bash
+dotnet tool update --global AtlassianCli
+```
+
+### Uninstall
+
+To uninstall the tool:
+
+```bash
+dotnet tool uninstall --global AtlassianCli
+```
 
 ## Features
 
@@ -24,7 +56,7 @@ A .NET console application that provides a command-line interface to interact wi
 
 ## Requirements
 
-- .NET 8.0 SDK or later
+- .NET 10.0 SDK or later
 - Access to a Confluence and/or Jira instance with REST API enabled
 
 ## Configuration
