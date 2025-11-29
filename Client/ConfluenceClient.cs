@@ -10,7 +10,7 @@ namespace AtlassianCli.Client;
 /// Client for interacting with Confluence REST API.
 /// Handles authentication, HTTP requests, and response parsing.
 /// </summary>
-public class ConfluenceClient : IDisposable
+public sealed class ConfluenceClient : IDisposable
 {
     private readonly HttpClient _httpClient;
     private readonly string _baseUrl;

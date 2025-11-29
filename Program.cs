@@ -35,7 +35,7 @@ namespace AtlassianCli;
 ///   atlassiancli assign-user --key PROJ-123 --user john.doe
 ///   atlassiancli update-issue --key PROJ-123 --description "Updated description"
 /// </summary>
-public class Program
+public static class Program
 {
     public static async Task<int> Main(string[] args)
     {
