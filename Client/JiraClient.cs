@@ -80,7 +80,7 @@ public class JiraClient : IDisposable
     /// <returns>The requested issue.</returns>
     public async Task<JiraIssue> GetIssueAsync(string issueKey)
     {
-        var url = $"{_baseUrl}/rest/api/2/issue/{issueKey}?expand=names,renderedFields";
+        var url = $"{_baseUrl}/rest/api/2/issue/{issueKey}?expand=renderedFields";
         var response = await _httpClient.GetAsync(url);
 
         await EnsureSuccessAsync(response, $"getting issue {issueKey}");

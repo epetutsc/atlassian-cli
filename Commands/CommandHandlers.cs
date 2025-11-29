@@ -8,6 +8,11 @@ namespace AtlassianCli.Commands;
 /// </summary>
 public static class CommandHandlers
 {
+    /// <summary>
+    /// Maximum number of comments to display when showing issue details.
+    /// </summary>
+    private const int MaxDisplayedComments = 5;
+
     // ==================== Confluence Handlers ====================
 
     /// <summary>
@@ -378,15 +383,15 @@ public static class CommandHandlers
         {
             Console.WriteLine();
             Console.WriteLine($"=== Comments ({issue.Fields.Comment.Total}) ===");
-            foreach (var comment in issue.Fields.Comment.Comments.Take(5))
+            foreach (var comment in issue.Fields.Comment.Comments.Take(MaxDisplayedComments))
             {
                 Console.WriteLine($"[{comment.Created}] {comment.Author?.DisplayName ?? "Unknown"}:");
                 Console.WriteLine($"  {comment.Body}");
                 Console.WriteLine();
             }
-            if (issue.Fields.Comment.Total > 5)
+            if (issue.Fields.Comment.Total > MaxDisplayedComments)
             {
-                Console.WriteLine($"... and {issue.Fields.Comment.Total - 5} more comments");
+                Console.WriteLine($"... and {issue.Fields.Comment.Total - MaxDisplayedComments} more comments");
             }
         }
     }
