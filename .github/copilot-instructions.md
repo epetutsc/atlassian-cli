@@ -29,7 +29,7 @@ AtlassianCli/
 
 ## Prerequisites
 
-- .NET 8.0 SDK or later
+- .NET 10.0 SDK or later
 - Access to a Confluence and/or Jira instance with REST API enabled
 
 ## Building the Project
