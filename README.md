@@ -81,6 +81,17 @@ dotnet run -- --help
 
 ---
 
+## File Support
+
+All commands that accept body or description content support reading from a UTF-8 encoded file using the `--file` option (or `--description-file` for create-issue). This allows you to provide content from a file instead of the command line.
+
+Example with file:
+```bash
+dotnet run -- create-page --space MYSPACE --title "My Page" --file content.html
+```
+
+---
+
 ## Confluence Commands
 
 ### Create a Page
@@ -89,10 +100,16 @@ dotnet run -- --help
 dotnet run -- create-page --space MYSPACE --title "My New Page" --body "<p>Hello Confluence!</p>"
 ```
 
+With file:
+```bash
+dotnet run -- create-page --space MYSPACE --title "My New Page" --file content.html
+```
+
 Options:
 - `-s, --space` (required): Space key
 - `-t, --title` (required): Page title
-- `-b, --body` (required): Page content in storage format
+- `-b, --body`: Page content in storage format (either --body or --file is required)
+- `--file`: Path to a UTF-8 encoded file containing the body content
 
 ### Get a Page
 
@@ -129,11 +146,18 @@ Update by title:
 dotnet run -- update-page --space MYSPACE --title "My Page" --body "<p>Updated</p>"
 ```
 
+With file:
+```bash
+dotnet run -- update-page --id 12345 --file content.html
+dotnet run -- update-page --id 12345 --file content.html --append
+```
+
 Options:
 - `-i, --id`: Page ID
 - `-s, --space`: Space key (required with --title)
 - `-t, --title`: Page title (required with --space)
-- `-b, --body` (required): New page content
+- `-b, --body`: New page content (either --body or --file is required)
+- `--file`: Path to a UTF-8 encoded file containing the body content
 - `-a, --append`: Append to existing content instead of replacing
 
 ---
@@ -160,11 +184,17 @@ With description:
 dotnet run -- create-issue --project PROJ --summary "Bug fix needed" --type Bug --description "Detailed description here"
 ```
 
+With description from file:
+```bash
+dotnet run -- create-issue --project PROJ --summary "Task" --type Task --description-file desc.txt
+```
+
 Options:
 - `-p, --project` (required): Project key
 - `-s, --summary` (required): Issue summary/title
 - `-t, --type` (required): Issue type (e.g., Task, Bug, Story)
 - `-d, --description`: Issue description
+- `--description-file`: Path to a UTF-8 encoded file containing the description
 
 ### Add a Comment
 
@@ -172,9 +202,15 @@ Options:
 dotnet run -- add-comment --key PROJ-123 --body "This is my comment"
 ```
 
+With file:
+```bash
+dotnet run -- add-comment --key PROJ-123 --file comment.txt
+```
+
 Options:
 - `-k, --key` (required): Issue key
-- `-b, --body` (required): Comment body text
+- `-b, --body`: Comment body text (either --body or --file is required)
+- `--file`: Path to a UTF-8 encoded file containing the comment body
 
 ### Change Status
 
@@ -204,9 +240,15 @@ Options:
 dotnet run -- update-issue --key PROJ-123 --description "Updated description for the issue"
 ```
 
+With file:
+```bash
+dotnet run -- update-issue --key PROJ-123 --file description.txt
+```
+
 Options:
 - `-k, --key` (required): Issue key
-- `-d, --description` (required): New description
+- `-d, --description`: New description (either --description or --file is required)
+- `--file`: Path to a UTF-8 encoded file containing the description
 
 ---
 
