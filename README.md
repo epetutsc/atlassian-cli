@@ -1,24 +1,37 @@
-# Confluence CLI
+# Atlassian CLI
 
-A .NET console application that provides a command-line interface to interact with a self-hosted Confluence (on-prem) instance via Confluence's REST API.
+A .NET console application that provides a command-line interface to interact with self-hosted Confluence and Jira (on-prem) instances via their REST APIs.
 
 ## Features
 
+### Confluence
 - **Create pages** in any Confluence space
 - **Read pages** by ID or by title + space key
 - **Update pages** with replace or append mode
 - Support for Confluence storage format (XHTML)
+
+### Jira
+- **Read issues** by key
+- **Create issues** in any project
+- **Add comments** to issues
+- **Change status** of issues (transitions)
+- **Assign users** to issues
+- **Update issue descriptions**
+
+### General
 - Environment variable-based configuration
 - Comprehensive help system
 
 ## Requirements
 
 - .NET 8.0 SDK or later
-- Access to a Confluence instance with REST API enabled
+- Access to a Confluence and/or Jira instance with REST API enabled
 
 ## Configuration
 
-Set the following environment variables before using the CLI:
+### Confluence Environment Variables
+
+Set the following environment variables before using Confluence commands:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -27,12 +40,29 @@ Set the following environment variables before using the CLI:
 | `CONFLUENCE_API_TOKEN` | Conditional | API token (recommended - use this OR password) |
 | `CONFLUENCE_PASSWORD` | Conditional | Password (use this OR API token) |
 
+### Jira Environment Variables
+
+Set the following environment variables before using Jira commands:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `JIRA_BASE_URL` | Yes | Base URL of your Jira instance (e.g., `https://jira.example.com`) |
+| `JIRA_USERNAME` | Yes | Username for authentication |
+| `JIRA_API_TOKEN` | Conditional | API token (recommended - use this OR password) |
+| `JIRA_PASSWORD` | Conditional | Password (use this OR API token) |
+
 ### Example Configuration
 
 ```bash
+# Confluence
 export CONFLUENCE_BASE_URL=https://confluence.example.com
 export CONFLUENCE_USERNAME=your.username
 export CONFLUENCE_API_TOKEN=your-api-token
+
+# Jira
+export JIRA_BASE_URL=https://jira.example.com
+export JIRA_USERNAME=your.username
+export JIRA_API_TOKEN=your-api-token
 ```
 
 ## Building
@@ -48,6 +78,10 @@ dotnet build
 ```bash
 dotnet run -- --help
 ```
+
+---
+
+## Confluence Commands
 
 ### Create a Page
 
@@ -102,15 +136,91 @@ Options:
 - `-b, --body` (required): New page content
 - `-a, --append`: Append to existing content instead of replacing
 
+---
+
+## Jira Commands
+
+### Get an Issue
+
+```bash
+dotnet run -- get-issue --key PROJ-123
+```
+
+Options:
+- `-k, --key` (required): Issue key (e.g., PROJ-123)
+
+### Create an Issue
+
+```bash
+dotnet run -- create-issue --project PROJ --summary "My new task" --type Task
+```
+
+With description:
+```bash
+dotnet run -- create-issue --project PROJ --summary "Bug fix needed" --type Bug --description "Detailed description here"
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-s, --summary` (required): Issue summary/title
+- `-t, --type` (required): Issue type (e.g., Task, Bug, Story)
+- `-d, --description`: Issue description
+
+### Add a Comment
+
+```bash
+dotnet run -- add-comment --key PROJ-123 --body "This is my comment"
+```
+
+Options:
+- `-k, --key` (required): Issue key
+- `-b, --body` (required): Comment body text
+
+### Change Status
+
+```bash
+dotnet run -- change-status --key PROJ-123 --status "In Progress"
+```
+
+Options:
+- `-k, --key` (required): Issue key
+- `-s, --status` (required): Target status name (e.g., "In Progress", "Done")
+
+Note: The status must be a valid transition from the current issue status.
+
+### Assign User
+
+```bash
+dotnet run -- assign-user --key PROJ-123 --user john.doe
+```
+
+Options:
+- `-k, --key` (required): Issue key
+- `-u, --user` (required): Username or display name to assign
+
+### Update Issue Description
+
+```bash
+dotnet run -- update-issue --key PROJ-123 --description "Updated description for the issue"
+```
+
+Options:
+- `-k, --key` (required): Issue key
+- `-d, --description` (required): New description
+
+---
+
 ## Project Structure
 
 ```
-ConfluenceCli/
+AtlassianCli/
 ├── Program.cs                    # Entry point, CLI parsing
 ├── Client/
-│   └── ConfluenceClient.cs       # REST API client
+│   ├── ConfluenceClient.cs       # Confluence REST API client
+│   └── JiraClient.cs             # Jira REST API client
 ├── Models/
-│   └── ConfluenceModels.cs       # Data transfer objects
+│   ├── ConfluenceModels.cs       # Confluence data transfer objects
+│   └── JiraModels.cs             # Jira data transfer objects
 ├── Commands/
 │   ├── CommandOptions.cs         # CLI option definitions
 │   └── CommandHandlers.cs        # Command execution logic

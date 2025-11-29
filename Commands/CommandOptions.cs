@@ -1,6 +1,8 @@
 using CommandLine;
 
-namespace ConfluenceCli.Commands;
+namespace AtlassianCli.Commands;
+
+// ==================== Confluence Commands ====================
 
 /// <summary>
 /// Options for the create-page command.
@@ -57,4 +59,87 @@ public class UpdatePageOptions
 
     [Option('a', "append", Default = false, HelpText = "Append content to existing page instead of replacing.")]
     public bool Append { get; set; }
+}
+
+// ==================== Jira Commands ====================
+
+/// <summary>
+/// Options for the get-issue command.
+/// </summary>
+[Verb("get-issue", HelpText = "Retrieve a Jira issue by key.")]
+public class GetIssueOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The issue key (e.g., PROJ-123).")]
+    public string IssueKey { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the create-issue command.
+/// </summary>
+[Verb("create-issue", HelpText = "Create a new issue in Jira.")]
+public class CreateIssueOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('s', "summary", Required = true, HelpText = "The issue summary/title.")]
+    public string Summary { get; set; } = string.Empty;
+
+    [Option('t', "type", Required = true, HelpText = "The issue type (e.g., Task, Bug, Story).")]
+    public string IssueType { get; set; } = string.Empty;
+
+    [Option('d', "description", Required = false, HelpText = "The issue description.")]
+    public string? Description { get; set; }
+}
+
+/// <summary>
+/// Options for the add-comment command.
+/// </summary>
+[Verb("add-comment", HelpText = "Add a comment to a Jira issue.")]
+public class AddCommentOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The issue key (e.g., PROJ-123).")]
+    public string IssueKey { get; set; } = string.Empty;
+
+    [Option('b', "body", Required = true, HelpText = "The comment body text.")]
+    public string Body { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the change-status command.
+/// </summary>
+[Verb("change-status", HelpText = "Change the status of a Jira issue.")]
+public class ChangeStatusOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The issue key (e.g., PROJ-123).")]
+    public string IssueKey { get; set; } = string.Empty;
+
+    [Option('s', "status", Required = true, HelpText = "The target status name (e.g., 'In Progress', 'Done').")]
+    public string Status { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the assign-user command.
+/// </summary>
+[Verb("assign-user", HelpText = "Assign a user to a Jira issue.")]
+public class AssignUserOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The issue key (e.g., PROJ-123).")]
+    public string IssueKey { get; set; } = string.Empty;
+
+    [Option('u', "user", Required = true, HelpText = "The username or display name to assign.")]
+    public string User { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the update-issue command.
+/// </summary>
+[Verb("update-issue", HelpText = "Update a Jira issue's description.")]
+public class UpdateIssueOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The issue key (e.g., PROJ-123).")]
+    public string IssueKey { get; set; } = string.Empty;
+
+    [Option('d', "description", Required = true, HelpText = "The new description for the issue.")]
+    public string Description { get; set; } = string.Empty;
 }

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace ConfluenceCli.Models;
+namespace AtlassianCli.Models;
 
 /// <summary>
 /// Represents a Confluence space reference.
