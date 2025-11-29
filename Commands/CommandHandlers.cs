@@ -124,7 +124,7 @@ public static class CommandHandlers
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
             return 1;
         }
     }
@@ -140,7 +140,7 @@ public static class CommandHandlers
             if (string.IsNullOrEmpty(options.PageId) && 
                 (string.IsNullOrEmpty(options.SpaceKey) || string.IsNullOrEmpty(options.Title)))
             {
-                Console.Error.WriteLine("Error: You must provide either --id or both --space and --title.");
+                await Console.Error.WriteLineAsync("Error: You must provide either --id or both --space and --title.");
                 return 1;
             }
 
@@ -161,7 +161,7 @@ public static class CommandHandlers
 
             if (page == null)
             {
-                Console.Error.WriteLine("Page not found.");
+                await Console.Error.WriteLineAsync("Page not found.");
                 return 1;
             }
 
@@ -172,7 +172,7 @@ public static class CommandHandlers
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
             return 1;
         }
     }
@@ -188,7 +188,7 @@ public static class CommandHandlers
             if (string.IsNullOrEmpty(options.PageId) && 
                 (string.IsNullOrEmpty(options.SpaceKey) || string.IsNullOrEmpty(options.Title)))
             {
-                Console.Error.WriteLine("Error: You must provide either --id or both --space and --title.");
+                await Console.Error.WriteLineAsync("Error: You must provide either --id or both --space and --title.");
                 return 1;
             }
 
@@ -223,7 +223,7 @@ public static class CommandHandlers
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
             return 1;
         }
     }
@@ -287,7 +287,7 @@ public static class CommandHandlers
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
             return 1;
         }
     }
@@ -324,7 +324,7 @@ public static class CommandHandlers
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
             return 1;
         }
     }
@@ -353,7 +353,7 @@ public static class CommandHandlers
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
             return 1;
         }
     }
@@ -378,7 +378,7 @@ public static class CommandHandlers
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
             return 1;
         }
     }
@@ -403,7 +403,7 @@ public static class CommandHandlers
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
             return 1;
         }
     }
@@ -430,7 +430,7 @@ public static class CommandHandlers
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
             return 1;
         }
     }

@@ -10,7 +10,7 @@ namespace AtlassianCli.Client;
 /// Client for interacting with Jira REST API.
 /// Handles authentication, HTTP requests, and response parsing.
 /// </summary>
-public class JiraClient : IDisposable
+public sealed class JiraClient : IDisposable
 {
     private readonly HttpClient _httpClient;
     private readonly string _baseUrl;
@@ -216,7 +216,7 @@ public class JiraClient : IDisposable
         AssignJiraIssueRequest request;
         if (users.Count > 0)
         {
-            var user = users.First();
+            var user = users[0];
             request = new AssignJiraIssueRequest
             {
                 AccountId = user.AccountId,
