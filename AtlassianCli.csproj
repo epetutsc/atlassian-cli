@@ -5,10 +5,31 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- .NET Tool Configuration -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>atlassiancli</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>AtlassianCli</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>epetutsc</Authors>
+    <Description>A command-line interface for Confluence and Jira REST APIs</Description>
+    <PackageTags>confluence;jira;atlassian;cli;tool</PackageTags>
+    <PackageProjectUrl>https://github.com/epetutsc/confluence-cli</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/epetutsc/confluence-cli</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
