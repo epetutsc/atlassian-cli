@@ -53,6 +53,7 @@ dotnet tool uninstall --global AtlassianCli
 ### General
 - Environment variable-based configuration
 - Comprehensive help system
+- Hierarchical sub-commands (confluence/jira)
 
 ## Requirements
 
@@ -105,10 +106,14 @@ dotnet build
 
 ## Usage
 
+The CLI uses a hierarchical command structure where you first specify the service (`confluence` or `jira`) followed by the specific command.
+
 ### Show Help
 
 ```bash
 dotnet run -- --help
+dotnet run -- confluence --help
+dotnet run -- jira --help
 ```
 
 ---
@@ -119,7 +124,7 @@ All commands that accept body or description content support reading from a UTF-
 
 Example with file:
 ```bash
-dotnet run -- create-page --space MYSPACE --title "My Page" --file content.html
+dotnet run -- confluence create-page --space MYSPACE --title "My Page" --file content.html
 ```
 
 ---
@@ -129,12 +134,12 @@ dotnet run -- create-page --space MYSPACE --title "My Page" --file content.html
 ### Create a Page
 
 ```bash
-dotnet run -- create-page --space MYSPACE --title "My New Page" --body "<p>Hello Confluence!</p>"
+dotnet run -- confluence create-page --space MYSPACE --title "My New Page" --body "<p>Hello Confluence!</p>"
 ```
 
 With file:
 ```bash
-dotnet run -- create-page --space MYSPACE --title "My New Page" --file content.html
+dotnet run -- confluence create-page --space MYSPACE --title "My New Page" --file content.html
 ```
 
 Options:
@@ -147,12 +152,12 @@ Options:
 
 By ID:
 ```bash
-dotnet run -- get-page --id 12345
+dotnet run -- confluence get-page --id 12345
 ```
 
 By title and space:
 ```bash
-dotnet run -- get-page --space MYSPACE --title "My Page"
+dotnet run -- confluence get-page --space MYSPACE --title "My Page"
 ```
 
 Options:
@@ -165,23 +170,23 @@ Options:
 
 Replace content:
 ```bash
-dotnet run -- update-page --id 12345 --body "<p>New content</p>"
+dotnet run -- confluence update-page --id 12345 --body "<p>New content</p>"
 ```
 
 Append content:
 ```bash
-dotnet run -- update-page --id 12345 --body "<p>Additional content</p>" --append
+dotnet run -- confluence update-page --id 12345 --body "<p>Additional content</p>" --append
 ```
 
 Update by title:
 ```bash
-dotnet run -- update-page --space MYSPACE --title "My Page" --body "<p>Updated</p>"
+dotnet run -- confluence update-page --space MYSPACE --title "My Page" --body "<p>Updated</p>"
 ```
 
 With file:
 ```bash
-dotnet run -- update-page --id 12345 --file content.html
-dotnet run -- update-page --id 12345 --file content.html --append
+dotnet run -- confluence update-page --id 12345 --file content.html
+dotnet run -- confluence update-page --id 12345 --file content.html --append
 ```
 
 Options:
@@ -199,7 +204,7 @@ Options:
 ### Get an Issue
 
 ```bash
-dotnet run -- get-issue --key PROJ-123
+dotnet run -- jira get-issue --key PROJ-123
 ```
 
 Options:
@@ -208,17 +213,17 @@ Options:
 ### Create an Issue
 
 ```bash
-dotnet run -- create-issue --project PROJ --summary "My new task" --type Task
+dotnet run -- jira create-issue --project PROJ --summary "My new task" --type Task
 ```
 
 With description:
 ```bash
-dotnet run -- create-issue --project PROJ --summary "Bug fix needed" --type Bug --description "Detailed description here"
+dotnet run -- jira create-issue --project PROJ --summary "Bug fix needed" --type Bug --description "Detailed description here"
 ```
 
 With description from file:
 ```bash
-dotnet run -- create-issue --project PROJ --summary "Task" --type Task --description-file desc.txt
+dotnet run -- jira create-issue --project PROJ --summary "Task" --type Task --description-file desc.txt
 ```
 
 Options:
@@ -231,12 +236,12 @@ Options:
 ### Add a Comment
 
 ```bash
-dotnet run -- add-comment --key PROJ-123 --body "This is my comment"
+dotnet run -- jira add-comment --key PROJ-123 --body "This is my comment"
 ```
 
 With file:
 ```bash
-dotnet run -- add-comment --key PROJ-123 --file comment.txt
+dotnet run -- jira add-comment --key PROJ-123 --file comment.txt
 ```
 
 Options:
@@ -247,7 +252,7 @@ Options:
 ### Change Status
 
 ```bash
-dotnet run -- change-status --key PROJ-123 --status "In Progress"
+dotnet run -- jira change-status --key PROJ-123 --status "In Progress"
 ```
 
 Options:
@@ -259,7 +264,7 @@ Note: The status must be a valid transition from the current issue status.
 ### Assign User
 
 ```bash
-dotnet run -- assign-user --key PROJ-123 --user john.doe
+dotnet run -- jira assign-user --key PROJ-123 --user john.doe
 ```
 
 Options:
@@ -269,12 +274,12 @@ Options:
 ### Update Issue Description
 
 ```bash
-dotnet run -- update-issue --key PROJ-123 --description "Updated description for the issue"
+dotnet run -- jira update-issue --key PROJ-123 --description "Updated description for the issue"
 ```
 
 With file:
 ```bash
-dotnet run -- update-issue --key PROJ-123 --file description.txt
+dotnet run -- jira update-issue --key PROJ-123 --file description.txt
 ```
 
 Options:
