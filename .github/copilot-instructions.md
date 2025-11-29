@@ -16,12 +16,17 @@ export JIRA_USERNAME=your.username
 export JIRA_API_TOKEN=your-api-token
 ```
 
+## File Support
+
+All commands that accept body or description content support reading from a UTF-8 encoded file using the `--file` option (or `--description-file` for create-issue). This allows you to provide content from a file instead of the command line.
+
 ## Confluence Commands
 
 ### create-page
 ```bash
 dotnet run -- create-page --space <SPACE_KEY> --title "<TITLE>" --body "<CONTENT>"
 dotnet run -- create-page -s DOCS -t "My Page" -b "<p>Content</p>"
+dotnet run -- create-page --space DOCS --title "My Page" --file content.html
 ```
 
 ### get-page
@@ -36,6 +41,8 @@ dotnet run -- get-page -i 12345 -f view
 dotnet run -- update-page --id <PAGE_ID> --body "<NEW_CONTENT>"
 dotnet run -- update-page --id 12345 --body "<p>More</p>" --append
 dotnet run -- update-page --space DOCS --title "My Page" --body "<p>Updated</p>"
+dotnet run -- update-page --id 12345 --file content.html
+dotnet run -- update-page --id 12345 --file content.html --append
 ```
 
 ## Jira Commands
@@ -50,12 +57,14 @@ dotnet run -- get-issue -k PROJ-123
 ```bash
 dotnet run -- create-issue --project <PROJECT> --summary "<SUMMARY>" --type <TYPE>
 dotnet run -- create-issue -p PROJ -s "New task" -t Task -d "Description"
+dotnet run -- create-issue --project PROJ --summary "Task" --type Task --description-file desc.txt
 ```
 
 ### add-comment
 ```bash
 dotnet run -- add-comment --key <ISSUE_KEY> --body "<COMMENT>"
 dotnet run -- add-comment -k PROJ-123 -b "Working on this"
+dotnet run -- add-comment --key PROJ-123 --file comment.txt
 ```
 
 ### change-status
@@ -74,4 +83,5 @@ dotnet run -- assign-user -k PROJ-123 -u john.doe
 ```bash
 dotnet run -- update-issue --key <ISSUE_KEY> --description "<DESCRIPTION>"
 dotnet run -- update-issue -k PROJ-123 -d "Updated description"
+dotnet run -- update-issue --key PROJ-123 --file description.txt
 ```

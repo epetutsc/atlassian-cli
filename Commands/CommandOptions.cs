@@ -16,8 +16,11 @@ public class CreatePageOptions
     [Option('t', "title", Required = true, HelpText = "The title of the new page.")]
     public string Title { get; set; } = string.Empty;
 
-    [Option('b', "body", Required = true, HelpText = "The body content in Confluence storage format (XHTML) or plain text.")]
-    public string Body { get; set; } = string.Empty;
+    [Option('b', "body", HelpText = "The body content in Confluence storage format (XHTML) or plain text. Either --body or --file is required.")]
+    public string? Body { get; set; }
+
+    [Option("file", HelpText = "Path to a UTF-8 encoded file containing the body content. Either --body or --file is required.")]
+    public string? FilePath { get; set; }
 }
 
 /// <summary>
@@ -54,8 +57,11 @@ public class UpdatePageOptions
     [Option('t', "title", SetName = "byTitle", HelpText = "The title of the page to update (requires --space).")]
     public string? Title { get; set; }
 
-    [Option('b', "body", Required = true, HelpText = "The new body content in Confluence storage format (XHTML).")]
-    public string Body { get; set; } = string.Empty;
+    [Option('b', "body", HelpText = "The new body content in Confluence storage format (XHTML). Either --body or --file is required.")]
+    public string? Body { get; set; }
+
+    [Option("file", HelpText = "Path to a UTF-8 encoded file containing the body content. Either --body or --file is required.")]
+    public string? FilePath { get; set; }
 
     [Option('a', "append", Default = false, HelpText = "Append content to existing page instead of replacing.")]
     public bool Append { get; set; }
@@ -88,8 +94,11 @@ public class CreateIssueOptions
     [Option('t', "type", Required = true, HelpText = "The issue type (e.g., Task, Bug, Story).")]
     public string IssueType { get; set; } = string.Empty;
 
-    [Option('d', "description", Required = false, HelpText = "The issue description.")]
+    [Option('d', "description", Required = false, HelpText = "The issue description. Can be used with --description-file alternatively.")]
     public string? Description { get; set; }
+
+    [Option("description-file", HelpText = "Path to a UTF-8 encoded file containing the description. Alternative to --description.")]
+    public string? DescriptionFilePath { get; set; }
 }
 
 /// <summary>
@@ -101,8 +110,11 @@ public class AddCommentOptions
     [Option('k', "key", Required = true, HelpText = "The issue key (e.g., PROJ-123).")]
     public string IssueKey { get; set; } = string.Empty;
 
-    [Option('b', "body", Required = true, HelpText = "The comment body text.")]
-    public string Body { get; set; } = string.Empty;
+    [Option('b', "body", HelpText = "The comment body text. Either --body or --file is required.")]
+    public string? Body { get; set; }
+
+    [Option("file", HelpText = "Path to a UTF-8 encoded file containing the comment body. Either --body or --file is required.")]
+    public string? FilePath { get; set; }
 }
 
 /// <summary>
@@ -140,6 +152,9 @@ public class UpdateIssueOptions
     [Option('k', "key", Required = true, HelpText = "The issue key (e.g., PROJ-123).")]
     public string IssueKey { get; set; } = string.Empty;
 
-    [Option('d', "description", Required = true, HelpText = "The new description for the issue.")]
-    public string Description { get; set; } = string.Empty;
+    [Option('d', "description", HelpText = "The new description for the issue. Either --description or --file is required.")]
+    public string? Description { get; set; }
+
+    [Option("file", HelpText = "Path to a UTF-8 encoded file containing the description. Either --description or --file is required.")]
+    public string? FilePath { get; set; }
 }
