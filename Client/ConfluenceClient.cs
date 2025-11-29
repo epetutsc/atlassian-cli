@@ -2,9 +2,9 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using ConfluenceCli.Models;
+using AtlassianCli.Models;
 
-namespace ConfluenceCli.Client;
+namespace AtlassianCli.Client;
 
 /// <summary>
 /// Client for interacting with Confluence REST API.
