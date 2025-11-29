@@ -63,7 +63,7 @@ public static class Program
         });
 
         // Handle top-level sub-commands manually
-        var subCommand = args[0].ToLowerInvariant();
+        var subCommand = args[0]?.ToLowerInvariant() ?? string.Empty;
         var subArgs = args.Skip(1).ToArray();
 
         return subCommand switch
