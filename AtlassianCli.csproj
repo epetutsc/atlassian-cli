@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DefaultItemExcludes>$(DefaultItemExcludes);AtlassianCli.Tests\**</DefaultItemExcludes>
 
     <!-- .NET Tool Configuration -->
     <PackAsTool>true</PackAsTool>
