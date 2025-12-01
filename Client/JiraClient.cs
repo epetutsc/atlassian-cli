@@ -42,7 +42,7 @@ public sealed class JiraClient : IDisposable
 
     /// <summary>
     /// Configures authentication for the HTTP client.
-    /// Supports both API token and username/password authentication.
+    /// Supports Bearer token (PAT), API token with username, and username/password authentication.
     /// </summary>
     private void ConfigureAuthentication()
     {
@@ -50,9 +50,14 @@ public sealed class JiraClient : IDisposable
         var username = Environment.GetEnvironmentVariable("JIRA_USERNAME");
         var password = Environment.GetEnvironmentVariable("JIRA_PASSWORD");
 
-        if (!string.IsNullOrEmpty(apiToken) && !string.IsNullOrEmpty(username))
+        if (!string.IsNullOrEmpty(apiToken) && string.IsNullOrEmpty(username))
         {
-            // API Token authentication (username + token as password)
+            // Bearer token authentication (Personal Access Token)
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
+        }
+        else if (!string.IsNullOrEmpty(apiToken) && !string.IsNullOrEmpty(username))
+        {
+            // API Token authentication (username + token as password) for Atlassian Cloud
             var credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{apiToken}"));
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
         }
@@ -66,7 +71,8 @@ public sealed class JiraClient : IDisposable
         {
             throw new InvalidOperationException(
                 "Authentication not configured. Please set either:\n" +
-                "  - JIRA_USERNAME and JIRA_API_TOKEN, or\n" +
+                "  - JIRA_API_TOKEN (for Personal Access Token / Bearer auth), or\n" +
+                "  - JIRA_USERNAME and JIRA_API_TOKEN (for Atlassian Cloud), or\n" +
                 "  - JIRA_USERNAME and JIRA_PASSWORD");
         }
 

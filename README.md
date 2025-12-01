@@ -62,39 +62,66 @@ dotnet tool uninstall --global AtlassianCli
 
 ## Configuration
 
-### Confluence Environment Variables
+### Authentication Methods
 
-Set the following environment variables before using Confluence commands:
+The CLI supports three authentication methods (in order of preference):
+
+1. **Bearer Token (Personal Access Token)** - Recommended for on-premises instances
+   - Set only `*_API_TOKEN` environment variable
+   - Uses HTTP Bearer authentication
+   - See [Atlassian PAT documentation](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html)
+
+2. **API Token with Username** - For Atlassian Cloud
+   - Set both `*_USERNAME` and `*_API_TOKEN`
+   - Uses HTTP Basic authentication with token as password
+
+3. **Username and Password** - Legacy method
+   - Set both `*_USERNAME` and `*_PASSWORD`
+   - Uses HTTP Basic authentication
+
+### Confluence Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `CONFLUENCE_BASE_URL` | Yes | Base URL of your Confluence instance (e.g., `https://confluence.example.com`) |
-| `CONFLUENCE_USERNAME` | Yes | Username for authentication |
-| `CONFLUENCE_API_TOKEN` | Conditional | API token (recommended - use this OR password) |
-| `CONFLUENCE_PASSWORD` | Conditional | Password (use this OR API token) |
+| `CONFLUENCE_API_TOKEN` | Conditional | Personal Access Token for Bearer auth (use alone), or API token (use with username) |
+| `CONFLUENCE_USERNAME` | Conditional | Username for Basic auth (required with API token for Cloud, or with password) |
+| `CONFLUENCE_PASSWORD` | Conditional | Password for Basic auth (use with username) |
 
 ### Jira Environment Variables
-
-Set the following environment variables before using Jira commands:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `JIRA_BASE_URL` | Yes | Base URL of your Jira instance (e.g., `https://jira.example.com`) |
-| `JIRA_USERNAME` | Yes | Username for authentication |
-| `JIRA_API_TOKEN` | Conditional | API token (recommended - use this OR password) |
-| `JIRA_PASSWORD` | Conditional | Password (use this OR API token) |
+| `JIRA_API_TOKEN` | Conditional | Personal Access Token for Bearer auth (use alone), or API token (use with username) |
+| `JIRA_USERNAME` | Conditional | Username for Basic auth (required with API token for Cloud, or with password) |
+| `JIRA_PASSWORD` | Conditional | Password for Basic auth (use with username) |
 
-### Example Configuration
+### Example Configurations
+
+#### Bearer Token (Personal Access Token) - On-Premises
 
 ```bash
-# Confluence
+# Confluence with PAT
 export CONFLUENCE_BASE_URL=https://confluence.example.com
-export CONFLUENCE_USERNAME=your.username
+export CONFLUENCE_API_TOKEN=your-personal-access-token
+
+# Jira with PAT
+export JIRA_BASE_URL=https://jira.example.com
+export JIRA_API_TOKEN=your-personal-access-token
+```
+
+#### API Token with Username - Atlassian Cloud
+
+```bash
+# Confluence Cloud
+export CONFLUENCE_BASE_URL=https://your-domain.atlassian.net/wiki
+export CONFLUENCE_USERNAME=your.email@example.com
 export CONFLUENCE_API_TOKEN=your-api-token
 
-# Jira
-export JIRA_BASE_URL=https://jira.example.com
-export JIRA_USERNAME=your.username
+# Jira Cloud
+export JIRA_BASE_URL=https://your-domain.atlassian.net
+export JIRA_USERNAME=your.email@example.com
 export JIRA_API_TOKEN=your-api-token
 ```
 
