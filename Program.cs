@@ -5,7 +5,7 @@ using AtlassianCli.Commands;
 namespace AtlassianCli;
 
 /// <summary>
-/// Atlassian CLI - A command-line interface for interacting with Confluence and Jira REST APIs.
+/// Atlassian CLI - A command-line interface for interacting with Confluence, Jira, and Bamboo REST APIs.
 /// 
 /// Environment Variables Required:
 ///   For Confluence:
@@ -19,6 +19,12 @@ namespace AtlassianCli;
 ///     JIRA_USERNAME           - Username for authentication  
 ///     JIRA_API_TOKEN          - API token (preferred) OR
 ///     JIRA_PASSWORD           - Password (if not using API token)
+///
+///   For Bamboo:
+///     BAMBOO_BASE_URL         - Base URL of your Bamboo instance (e.g., https://bamboo.example.com)
+///     BAMBOO_USERNAME         - Username for authentication  
+///     BAMBOO_API_TOKEN        - API token (preferred) OR
+///     BAMBOO_PASSWORD         - Password (if not using API token)
 /// 
 /// Confluence Usage Examples:
 ///   atlassiancli confluence create-page --space KEY --title "My Title" --body "&lt;p&gt;Hello&lt;/p&gt;"
@@ -34,6 +40,14 @@ namespace AtlassianCli;
 ///   atlassiancli jira change-status --key PROJ-123 --status "In Progress"
 ///   atlassiancli jira assign-user --key PROJ-123 --user john.doe
 ///   atlassiancli jira update-issue --key PROJ-123 --description "Updated description"
+///
+/// Bamboo Usage Examples:
+///   atlassiancli bamboo get-projects
+///   atlassiancli bamboo get-plans --project PROJ
+///   atlassiancli bamboo get-plan --key PROJ-PLAN
+///   atlassiancli bamboo get-builds --key PROJ-PLAN
+///   atlassiancli bamboo get-build --key PROJ-PLAN-123
+///   atlassiancli bamboo queue-build --key PROJ-PLAN
 /// </summary>
 public static class Program
 {
@@ -70,6 +84,7 @@ public static class Program
         {
             "confluence" => await HandleConfluenceAsync(subArgs, parser),
             "jira" => await HandleJiraAsync(subArgs, parser),
+            "bamboo" => await HandleBambooAsync(subArgs, parser),
             _ => HandleUnknownSubCommand(args[0])
         };
     }
@@ -81,7 +96,7 @@ public static class Program
     {
         Console.Error.WriteLine($"Error: Unknown sub-command '{command}'.");
         Console.Error.WriteLine();
-        Console.Error.WriteLine("Available sub-commands: confluence, jira");
+        Console.Error.WriteLine("Available sub-commands: confluence, jira, bamboo");
         Console.Error.WriteLine();
         Console.Error.WriteLine("Use 'atlassiancli --help' for more information.");
         return 1;
@@ -135,17 +150,48 @@ public static class Program
     }
 
     /// <summary>
+    /// Handles Bamboo sub-commands.
+    /// </summary>
+    private static async Task<int> HandleBambooAsync(string[] args, Parser parser)
+    {
+        if (args.Length == 0)
+        {
+            ShowBambooHelp();
+            return 0;
+        }
+
+        var parserResult = parser.ParseArguments<
+            GetBambooProjectsOptions, GetBambooProjectOptions, GetBambooPlansOptions,
+            GetBambooPlanOptions, GetBambooBranchesOptions, GetBambooBuildsOptions,
+            GetBambooBuildOptions, GetBambooLatestBuildOptions, QueueBambooBuildOptions>(args);
+
+        return await parserResult.MapResult(
+            async (GetBambooProjectsOptions opts) => await CommandHandlers.HandleGetBambooProjectsAsync(opts),
+            async (GetBambooProjectOptions opts) => await CommandHandlers.HandleGetBambooProjectAsync(opts),
+            async (GetBambooPlansOptions opts) => await CommandHandlers.HandleGetBambooPlansAsync(opts),
+            async (GetBambooPlanOptions opts) => await CommandHandlers.HandleGetBambooPlanAsync(opts),
+            async (GetBambooBranchesOptions opts) => await CommandHandlers.HandleGetBambooBranchesAsync(opts),
+            async (GetBambooBuildsOptions opts) => await CommandHandlers.HandleGetBambooBuildsAsync(opts),
+            async (GetBambooBuildOptions opts) => await CommandHandlers.HandleGetBambooBuildAsync(opts),
+            async (GetBambooLatestBuildOptions opts) => await CommandHandlers.HandleGetBambooLatestBuildAsync(opts),
+            async (QueueBambooBuildOptions opts) => await CommandHandlers.HandleQueueBambooBuildAsync(opts),
+            async errs => await HandleBambooParseErrorsAsync(parserResult, errs)
+        );
+    }
+
+    /// <summary>
     /// Displays the welcome message with CLI information.
     /// </summary>
     private static void ShowWelcome()
     {
-        Console.WriteLine("Atlassian CLI - Command-line interface for Confluence and Jira REST APIs");
+        Console.WriteLine("Atlassian CLI - Command-line interface for Confluence, Jira, and Bamboo REST APIs");
         Console.WriteLine();
-        Console.WriteLine("Usage: atlassiancli <confluence|jira> <command> [options]");
+        Console.WriteLine("Usage: atlassiancli <confluence|jira|bamboo> <command> [options]");
         Console.WriteLine();
         Console.WriteLine("Sub-commands:");
         Console.WriteLine("  confluence    Confluence commands for managing pages");
         Console.WriteLine("  jira          Jira commands for managing issues");
+        Console.WriteLine("  bamboo        Bamboo commands for viewing builds and triggering plans");
         Console.WriteLine();
         Console.WriteLine("Confluence Environment Variables:");
         Console.WriteLine("  CONFLUENCE_BASE_URL     Base URL of your Confluence instance");
@@ -166,6 +212,16 @@ public static class Program
         Console.WriteLine("  JIRA_API_TOKEN          API token (preferred for security)");
         Console.WriteLine("                          OR");
         Console.WriteLine("  JIRA_PASSWORD           Password (if not using API token)");
+        Console.WriteLine();
+        Console.WriteLine("Bamboo Environment Variables:");
+        Console.WriteLine("  BAMBOO_BASE_URL         Base URL of your Bamboo instance");
+        Console.WriteLine("                          Example: https://bamboo.example.com");
+        Console.WriteLine();
+        Console.WriteLine("  BAMBOO_USERNAME         Username for authentication");
+        Console.WriteLine();
+        Console.WriteLine("  BAMBOO_API_TOKEN        API token (preferred for security)");
+        Console.WriteLine("                          OR");
+        Console.WriteLine("  BAMBOO_PASSWORD         Password (if not using API token)");
     }
 
     /// <summary>
@@ -183,7 +239,14 @@ public static class Program
         Console.WriteLine("  atlassiancli jira create-issue --project PROJ --summary \"Task\" --type Task");
         Console.WriteLine("  atlassiancli jira add-comment --key PROJ-123 --body \"My comment\"");
         Console.WriteLine();
-        Console.WriteLine("Use 'atlassiancli <confluence|jira>' for more information about a sub-command.");
+        Console.WriteLine("Bamboo Examples:");
+        Console.WriteLine("  atlassiancli bamboo get-projects");
+        Console.WriteLine("  atlassiancli bamboo get-plans --project PROJ");
+        Console.WriteLine("  atlassiancli bamboo get-plan --key PROJ-PLAN");
+        Console.WriteLine("  atlassiancli bamboo get-builds --key PROJ-PLAN");
+        Console.WriteLine("  atlassiancli bamboo queue-build --key PROJ-PLAN");
+        Console.WriteLine();
+        Console.WriteLine("Use 'atlassiancli <confluence|jira|bamboo>' for more information about a sub-command.");
     }
 
     /// <summary>
@@ -236,6 +299,41 @@ public static class Program
         Console.WriteLine("  atlassiancli jira update-issue --key PROJ-123 --description \"Updated\"");
         Console.WriteLine();
         Console.WriteLine("Use 'atlassiancli jira <command> --help' for more information about a command.");
+    }
+
+    /// <summary>
+    /// Displays help for Bamboo sub-commands.
+    /// </summary>
+    private static void ShowBambooHelp()
+    {
+        Console.WriteLine("Atlassian CLI - Bamboo Commands");
+        Console.WriteLine();
+        Console.WriteLine("Usage: atlassiancli bamboo <command> [options]");
+        Console.WriteLine();
+        Console.WriteLine("Commands:");
+        Console.WriteLine("  get-projects       List all Bamboo projects");
+        Console.WriteLine("  get-project        Retrieve a project by key");
+        Console.WriteLine("  get-plans          List all plans (optionally filtered by project)");
+        Console.WriteLine("  get-plan           Retrieve a plan by key (includes configuration)");
+        Console.WriteLine("  get-branches       List branches for a plan");
+        Console.WriteLine("  get-builds         List build results for a plan");
+        Console.WriteLine("  get-build          Retrieve a specific build result");
+        Console.WriteLine("  get-latest-build   Retrieve the latest build result for a plan");
+        Console.WriteLine("  queue-build        Queue a new build for a plan (trigger build)");
+        Console.WriteLine();
+        Console.WriteLine("Examples:");
+        Console.WriteLine("  atlassiancli bamboo get-projects");
+        Console.WriteLine("  atlassiancli bamboo get-project --key PROJ");
+        Console.WriteLine("  atlassiancli bamboo get-plans --project PROJ");
+        Console.WriteLine("  atlassiancli bamboo get-plan --key PROJ-PLAN");
+        Console.WriteLine("  atlassiancli bamboo get-branches --key PROJ-PLAN");
+        Console.WriteLine("  atlassiancli bamboo get-builds --key PROJ-PLAN --max-results 10");
+        Console.WriteLine("  atlassiancli bamboo get-build --key PROJ-PLAN-123");
+        Console.WriteLine("  atlassiancli bamboo get-latest-build --key PROJ-PLAN");
+        Console.WriteLine("  atlassiancli bamboo queue-build --key PROJ-PLAN");
+        Console.WriteLine("  atlassiancli bamboo queue-build --key PROJ-PLAN --branch feature/my-branch");
+        Console.WriteLine();
+        Console.WriteLine("Use 'atlassiancli bamboo <command> --help' for more information about a command.");
     }
 
     /// <summary>
@@ -303,6 +401,48 @@ public static class Program
             h.AddPreOptionsLine("  atlassiancli jira change-status --key PROJ-123 --status \"In Progress\"");
             h.AddPreOptionsLine("  atlassiancli jira assign-user --key PROJ-123 --user john.doe");
             h.AddPreOptionsLine("  atlassiancli jira update-issue --key PROJ-123 --description \"Updated\"");
+            return h;
+        }, e => e);
+
+        Console.WriteLine(helpText);
+
+        if (errors.IsHelp() || errors.IsVersion())
+        {
+            return Task.FromResult(0);
+        }
+
+        return Task.FromResult(1);
+    }
+
+    /// <summary>
+    /// Handles parsing errors for Bamboo sub-commands.
+    /// </summary>
+    private static Task<int> HandleBambooParseErrorsAsync<T>(ParserResult<T> result, IEnumerable<Error> errors)
+    {
+        var helpText = HelpText.AutoBuild(result, h =>
+        {
+            h.AdditionalNewLineAfterOption = false;
+            h.Heading = "Atlassian CLI v1.0.0 - Bamboo";
+            h.Copyright = "Commands for viewing builds and triggering plans";
+            h.AddPreOptionsLine("");
+            h.AddPreOptionsLine("Usage: atlassiancli bamboo <command> [options]");
+            h.AddPreOptionsLine("");
+            h.AddPreOptionsLine("Commands:");
+            h.AddPreOptionsLine("  get-projects       List all Bamboo projects");
+            h.AddPreOptionsLine("  get-project        Retrieve a project by key");
+            h.AddPreOptionsLine("  get-plans          List all plans (optionally filtered by project)");
+            h.AddPreOptionsLine("  get-plan           Retrieve a plan by key (includes configuration)");
+            h.AddPreOptionsLine("  get-branches       List branches for a plan");
+            h.AddPreOptionsLine("  get-builds         List build results for a plan");
+            h.AddPreOptionsLine("  get-build          Retrieve a specific build result");
+            h.AddPreOptionsLine("  get-latest-build   Retrieve the latest build for a plan");
+            h.AddPreOptionsLine("  queue-build        Queue a new build for a plan");
+            h.AddPreOptionsLine("");
+            h.AddPreOptionsLine("Examples:");
+            h.AddPreOptionsLine("  atlassiancli bamboo get-projects");
+            h.AddPreOptionsLine("  atlassiancli bamboo get-plan --key PROJ-PLAN");
+            h.AddPreOptionsLine("  atlassiancli bamboo get-builds --key PROJ-PLAN");
+            h.AddPreOptionsLine("  atlassiancli bamboo queue-build --key PROJ-PLAN");
             return h;
         }, e => e);
 
