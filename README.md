@@ -56,6 +56,7 @@ dotnet tool uninstall --global AtlassianCli
 - **List branches** for a plan
 - **View build results** for plans
 - **Get build details** including stages, changes, and test results
+- **Get build logs** with optional text filtering (e.g., filter for 'error' or 'exception')
 - **Trigger builds** (queue builds for plans and branches)
 
 ### General
@@ -439,6 +440,33 @@ dotnet run -- bamboo queue-build --key PROJ-PLAN --branch feature/my-branch
 Options:
 - `-k, --key` (required): Plan key
 - `-b, --branch`: Branch name (optional, builds default branch if not specified)
+
+### Get Build Logs
+
+Get the logs from a build:
+```bash
+dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123
+```
+
+Filter logs to find errors:
+```bash
+dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123 --filter error
+```
+
+Filter logs to find exceptions:
+```bash
+dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123 --filter exception
+```
+
+Get logs for a specific job within the build:
+```bash
+dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123 --job PROJ-PLAN-JOB1
+```
+
+Options:
+- `-k, --key` (required): Build result key (e.g., PROJ-PLAN-123)
+- `-f, --filter`: Filter log lines containing this text (case-insensitive)
+- `-j, --job`: Get logs for a specific job within the build
 
 ---
 

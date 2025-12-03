@@ -633,4 +633,142 @@ public class BambooIntegrationTests : IDisposable
         Assert.Equal(queueResponse.BuildResultKey, deserialized.BuildResultKey);
         Assert.Equal(queueResponse.PlanKey, deserialized.PlanKey);
     }
+
+    [Fact]
+    public async Task GetBuildLogs_ShouldReturnLogs()
+    {
+        // Arrange
+        var logContent = "2024-01-15 10:00:00 Starting build...\n" +
+                         "2024-01-15 10:00:01 Compiling source code...\n" +
+                         "2024-01-15 10:00:05 Build successful\n";
+
+        _mockHandler.SetupResponse("/download/PROJ-BUILD-100/build_logs/PROJ-BUILD-100.log", HttpMethod.Get, _ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(logContent)
+            });
+
+        // Act
+        var response = await _httpClient.GetAsync("/download/PROJ-BUILD-100/build_logs/PROJ-BUILD-100.log");
+        var logs = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.True(response.IsSuccessStatusCode);
+        Assert.Contains("Starting build", logs);
+        Assert.Contains("Build successful", logs);
+    }
+
+    [Fact]
+    public async Task GetBuildLogs_WithLogEntries_ShouldReturnParsedLogs()
+    {
+        // Arrange
+        var buildResult = new BambooBuildResult
+        {
+            Key = "PROJ-BUILD-100",
+            BuildNumber = 100,
+            Successful = true,
+            Finished = true,
+            LogEntries = new BambooLogEntriesList
+            {
+                Size = 3,
+                LogEntry = new List<BambooLogEntry>
+                {
+                    new BambooLogEntry { Log = "Starting build...", Date = "2024-01-15T10:00:00.000+0000" },
+                    new BambooLogEntry { Log = "Compiling source code...", Date = "2024-01-15T10:00:01.000+0000" },
+                    new BambooLogEntry { Log = "Build successful", Date = "2024-01-15T10:00:05.000+0000" }
+                }
+            }
+        };
+
+        _mockHandler.SetupResponse("/rest/api/latest/result/PROJ-BUILD-100", HttpMethod.Get, buildResult);
+
+        // Act
+        var response = await _httpClient.GetAsync("/rest/api/latest/result/PROJ-BUILD-100");
+        var result = await response.Content.ReadFromJsonAsync<BambooBuildResult>();
+
+        // Assert
+        Assert.True(response.IsSuccessStatusCode);
+        Assert.NotNull(result);
+        Assert.NotNull(result.LogEntries);
+        Assert.Equal(3, result.LogEntries.Size);
+        Assert.Equal("Starting build...", result.LogEntries.LogEntry[0].Log);
+        Assert.Equal("Build successful", result.LogEntries.LogEntry[2].Log);
+    }
+
+    [Fact]
+    public async Task GetJobLogs_ShouldReturnJobSpecificLogs()
+    {
+        // Arrange
+        var logContent = "2024-01-15 10:00:00 Running job JOB1...\n" +
+                         "2024-01-15 10:00:01 ERROR: Build failed\n" +
+                         "2024-01-15 10:00:02 Exception: NullReferenceException\n";
+
+        _mockHandler.SetupResponse("/download/PROJ-BUILD-100/build_logs/PROJ-BUILD-JOB1.log", HttpMethod.Get, _ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(logContent)
+            });
+
+        // Act
+        var response = await _httpClient.GetAsync("/download/PROJ-BUILD-100/build_logs/PROJ-BUILD-JOB1.log");
+        var logs = await response.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.True(response.IsSuccessStatusCode);
+        Assert.Contains("Running job JOB1", logs);
+        Assert.Contains("ERROR: Build failed", logs);
+        Assert.Contains("Exception", logs);
+    }
+
+    [Fact]
+    public void BambooLogEntry_ShouldSerializeCorrectly()
+    {
+        // Arrange
+        var logEntry = new BambooLogEntry
+        {
+            Log = "Test log message",
+            Date = "2024-01-15T10:00:00.000+0000",
+            UnstyledLog = "Test log message",
+            FormattedDate = "2024-01-15 10:00:00"
+        };
+
+        // Act
+        var json = JsonSerializer.Serialize(logEntry);
+        var deserialized = JsonSerializer.Deserialize<BambooLogEntry>(json);
+
+        // Assert
+        Assert.NotNull(deserialized);
+        Assert.Equal(logEntry.Log, deserialized.Log);
+        Assert.Equal(logEntry.Date, deserialized.Date);
+        Assert.Equal(logEntry.UnstyledLog, deserialized.UnstyledLog);
+        Assert.Equal(logEntry.FormattedDate, deserialized.FormattedDate);
+    }
+
+    [Fact]
+    public void BambooLogEntriesList_ShouldSerializeCorrectly()
+    {
+        // Arrange
+        var logEntriesList = new BambooLogEntriesList
+        {
+            Size = 2,
+            StartIndex = 0,
+            MaxResult = 100,
+            LogEntry = new List<BambooLogEntry>
+            {
+                new BambooLogEntry { Log = "Line 1", Date = "2024-01-15T10:00:00.000+0000" },
+                new BambooLogEntry { Log = "Line 2", Date = "2024-01-15T10:00:01.000+0000" }
+            }
+        };
+
+        // Act
+        var json = JsonSerializer.Serialize(logEntriesList);
+        var deserialized = JsonSerializer.Deserialize<BambooLogEntriesList>(json);
+
+        // Assert
+        Assert.NotNull(deserialized);
+        Assert.Equal(2, deserialized.Size);
+        Assert.Equal(2, deserialized.LogEntry.Count);
+        Assert.Equal("Line 1", deserialized.LogEntry[0].Log);
+        Assert.Equal("Line 2", deserialized.LogEntry[1].Log);
+    }
 }

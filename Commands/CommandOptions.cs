@@ -254,3 +254,19 @@ public class QueueBambooBuildOptions
     [Option('b', "branch", Required = false, HelpText = "Branch name to build (optional, builds default branch if not specified).")]
     public string? Branch { get; set; }
 }
+
+/// <summary>
+/// Options for the get-build-logs command.
+/// </summary>
+[Verb("get-build-logs", HelpText = "Retrieve build logs from a Bamboo build result.")]
+public class GetBambooBuildLogsOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The build result key (e.g., PROJ-PLAN-123).")]
+    public string BuildKey { get; set; } = string.Empty;
+
+    [Option('f', "filter", Required = false, HelpText = "Filter log lines containing this text (case-insensitive). Useful for finding errors or exceptions.")]
+    public string? Filter { get; set; }
+
+    [Option('j', "job", Required = false, HelpText = "Get logs for a specific job within the build (e.g., PROJ-PLAN-JOB1).")]
+    public string? JobKey { get; set; }
+}

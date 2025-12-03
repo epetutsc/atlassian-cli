@@ -777,6 +777,65 @@ public static class CommandHandlers
         }
     }
 
+    /// <summary>
+    /// Handles the get-build-logs command for Bamboo.
+    /// </summary>
+    public static async Task<int> HandleGetBambooBuildLogsAsync(GetBambooBuildLogsOptions options)
+    {
+        try
+        {
+            using var client = new BambooClient();
+
+            string logs;
+            if (!string.IsNullOrEmpty(options.JobKey))
+            {
+                Console.WriteLine($"Fetching job logs for '{options.JobKey}' in build '{options.BuildKey}'...");
+                logs = await client.GetJobLogsAsync(options.BuildKey, options.JobKey);
+            }
+            else
+            {
+                Console.WriteLine($"Fetching build logs for '{options.BuildKey}'...");
+                logs = await client.GetBuildLogsAsync(options.BuildKey);
+            }
+
+            Console.WriteLine();
+
+            // Apply filter if specified
+            if (!string.IsNullOrEmpty(options.Filter))
+            {
+                var filteredLines = logs
+                    .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Where(line => line.Contains(options.Filter, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (filteredLines.Count == 0)
+                {
+                    Console.WriteLine($"No log lines found matching filter: '{options.Filter}'");
+                }
+                else
+                {
+                    Console.WriteLine($"=== Log Lines Matching '{options.Filter}' ({filteredLines.Count} matches) ===");
+                    foreach (var line in filteredLines)
+                    {
+                        Console.WriteLine(line);
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("=== Build Logs ===");
+                Console.WriteLine(logs);
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
     // ==================== Bamboo Display Helpers ====================
 
     /// <summary>
