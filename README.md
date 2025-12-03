@@ -1,6 +1,6 @@
 # Atlassian CLI
 
-A .NET tool that provides a command-line interface to interact with self-hosted Confluence and Jira (on-prem) instances via their REST APIs.
+A .NET tool that provides a command-line interface to interact with self-hosted Confluence, Jira, and Bitbucket (on-prem) instances via their REST APIs. Also supports Bitbucket Cloud.
 
 ## Installation
 
@@ -50,15 +50,32 @@ dotnet tool uninstall --global AtlassianCli
 - **Assign users** to issues
 - **Update issue descriptions**
 
+### Bitbucket
+- **Read repositories** by project key and slug
+- **List repositories** in a project
+- **List branches** in a repository
+- **List commits** with optional branch filter
+- **Get commit details** by ID
+- **List pull requests** with state filter
+- **Get pull request details** by ID
+- **List projects** and get project details
+- **Read configuration** (webhooks, branch restrictions)
+- **Get build statuses** for commits
+- **Pipeline operations** (Bitbucket Cloud only):
+  - List pipelines
+  - Get pipeline details
+  - Trigger pipelines
+  - Stop running pipelines
+
 ### General
 - Environment variable-based configuration
 - Comprehensive help system
-- Hierarchical sub-commands (confluence/jira)
+- Hierarchical sub-commands (confluence/jira/bitbucket)
 
 ## Requirements
 
 - .NET 10.0 SDK or later
-- Access to a Confluence and/or Jira instance with REST API enabled
+- Access to a Confluence, Jira, and/or Bitbucket instance with REST API enabled
 
 ## Configuration
 
@@ -97,6 +114,15 @@ The CLI supports three authentication methods (in order of preference):
 | `JIRA_USERNAME` | Conditional | Username for Basic auth (required with API token for Cloud, or with password) |
 | `JIRA_PASSWORD` | Conditional | Password for Basic auth (use with username) |
 
+### Bitbucket Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `BITBUCKET_BASE_URL` | Yes | Base URL of your Bitbucket instance (e.g., `https://bitbucket.example.com` for Server or `https://api.bitbucket.org` for Cloud) |
+| `BITBUCKET_API_TOKEN` | Conditional | Personal Access Token for Bearer auth (use alone), or API token (use with username) |
+| `BITBUCKET_USERNAME` | Conditional | Username for Basic auth (required with API token for Cloud, or with password) |
+| `BITBUCKET_PASSWORD` | Conditional | Password for Basic auth (use with username) |
+
 ### Example Configurations
 
 #### Bearer Token (Personal Access Token) - On-Premises
@@ -109,6 +135,10 @@ export CONFLUENCE_API_TOKEN=your-personal-access-token
 # Jira with PAT
 export JIRA_BASE_URL=https://jira.example.com
 export JIRA_API_TOKEN=your-personal-access-token
+
+# Bitbucket Server with PAT
+export BITBUCKET_BASE_URL=https://bitbucket.example.com
+export BITBUCKET_API_TOKEN=your-personal-access-token
 ```
 
 #### API Token with Username - Atlassian Cloud
@@ -123,6 +153,11 @@ export CONFLUENCE_API_TOKEN=your-api-token
 export JIRA_BASE_URL=https://your-domain.atlassian.net
 export JIRA_USERNAME=your.email@example.com
 export JIRA_API_TOKEN=your-api-token
+
+# Bitbucket Cloud
+export BITBUCKET_BASE_URL=https://api.bitbucket.org
+export BITBUCKET_USERNAME=your.email@example.com
+export BITBUCKET_API_TOKEN=your-app-password
 ```
 
 ## Building
@@ -133,7 +168,7 @@ dotnet build
 
 ## Usage
 
-The CLI uses a hierarchical command structure where you first specify the service (`confluence` or `jira`) followed by the specific command.
+The CLI uses a hierarchical command structure where you first specify the service (`confluence`, `jira`, or `bitbucket`) followed by the specific command.
 
 ### Show Help
 
@@ -141,6 +176,7 @@ The CLI uses a hierarchical command structure where you first specify the servic
 dotnet run -- --help
 dotnet run -- confluence --help
 dotnet run -- jira --help
+dotnet run -- bitbucket --help
 ```
 
 ---
@@ -316,6 +352,188 @@ Options:
 
 ---
 
+## Bitbucket Commands
+
+### Get Repository
+
+```bash
+dotnet run -- bitbucket get-repo --project PROJ --repo my-repo
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+
+### List Repositories
+
+```bash
+dotnet run -- bitbucket list-repos --project PROJ
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-l, --limit`: Maximum number of results (default: 25)
+
+### List Branches
+
+```bash
+dotnet run -- bitbucket list-branches --project PROJ --repo my-repo
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+- `-l, --limit`: Maximum number of results (default: 25)
+
+### List Commits
+
+```bash
+dotnet run -- bitbucket list-commits --project PROJ --repo my-repo
+dotnet run -- bitbucket list-commits --project PROJ --repo my-repo --branch main
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+- `-b, --branch`: Filter commits by branch name
+- `-l, --limit`: Maximum number of results (default: 25)
+
+### Get Commit
+
+```bash
+dotnet run -- bitbucket get-commit --project PROJ --repo my-repo --commit abc123
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+- `-c, --commit` (required): Commit ID (hash)
+
+### List Pull Requests
+
+```bash
+dotnet run -- bitbucket list-pull-requests --project PROJ --repo my-repo
+dotnet run -- bitbucket list-pull-requests --project PROJ --repo my-repo --state MERGED
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+- `-s, --state`: Filter by state (OPEN, MERGED, DECLINED, ALL) - default: OPEN
+- `-l, --limit`: Maximum number of results (default: 25)
+
+### Get Pull Request
+
+```bash
+dotnet run -- bitbucket get-pull-request --project PROJ --repo my-repo --id 42
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+- `-i, --id` (required): Pull request ID
+
+### Get Project
+
+```bash
+dotnet run -- bitbucket get-project --project PROJ
+```
+
+Options:
+- `-p, --project` (required): Project key
+
+### List Projects
+
+```bash
+dotnet run -- bitbucket list-projects
+```
+
+Options:
+- `-l, --limit`: Maximum number of results (default: 25)
+
+### Get Webhooks
+
+```bash
+dotnet run -- bitbucket get-webhooks --project PROJ --repo my-repo
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+
+### Get Branch Restrictions
+
+```bash
+dotnet run -- bitbucket get-branch-restrictions --project PROJ --repo my-repo
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+
+### Get Build Status
+
+```bash
+dotnet run -- bitbucket get-build-status --project PROJ --repo my-repo --commit abc123
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+- `-c, --commit` (required): Commit ID (hash)
+
+### Pipeline Commands (Bitbucket Cloud Only)
+
+The following commands are only available for Bitbucket Cloud.
+
+#### List Pipelines
+
+```bash
+dotnet run -- bitbucket list-pipelines --project workspace --repo my-repo
+```
+
+Options:
+- `-p, --project` (required): Workspace/project key
+- `-r, --repo` (required): Repository slug
+- `-l, --limit`: Maximum number of results (default: 25)
+
+#### Get Pipeline
+
+```bash
+dotnet run -- bitbucket get-pipeline --project workspace --repo my-repo --uuid {pipeline-uuid}
+```
+
+Options:
+- `-p, --project` (required): Workspace/project key
+- `-r, --repo` (required): Repository slug
+- `-u, --uuid` (required): Pipeline UUID
+
+#### Trigger Pipeline
+
+```bash
+dotnet run -- bitbucket trigger-pipeline --project workspace --repo my-repo --branch main
+dotnet run -- bitbucket trigger-pipeline --project workspace --repo my-repo --branch main --custom deploy-to-prod
+```
+
+Options:
+- `-p, --project` (required): Workspace/project key
+- `-r, --repo` (required): Repository slug
+- `-b, --branch` (required): Branch name to run the pipeline on
+- `-c, --custom`: Custom pipeline name to run (optional)
+
+#### Stop Pipeline
+
+```bash
+dotnet run -- bitbucket stop-pipeline --project workspace --repo my-repo --uuid {pipeline-uuid}
+```
+
+Options:
+- `-p, --project` (required): Workspace/project key
+- `-r, --repo` (required): Repository slug
+- `-u, --uuid` (required): Pipeline UUID to stop
+
+---
+
 ## Project Structure
 
 ```
@@ -323,10 +541,12 @@ AtlassianCli/
 ├── Program.cs                    # Entry point, CLI parsing
 ├── Client/
 │   ├── ConfluenceClient.cs       # Confluence REST API client
-│   └── JiraClient.cs             # Jira REST API client
+│   ├── JiraClient.cs             # Jira REST API client
+│   └── BitbucketClient.cs        # Bitbucket REST API client
 ├── Models/
 │   ├── ConfluenceModels.cs       # Confluence data transfer objects
-│   └── JiraModels.cs             # Jira data transfer objects
+│   ├── JiraModels.cs             # Jira data transfer objects
+│   └── BitbucketModels.cs        # Bitbucket data transfer objects
 ├── Commands/
 │   ├── CommandOptions.cs         # CLI option definitions
 │   └── CommandHandlers.cs        # Command execution logic

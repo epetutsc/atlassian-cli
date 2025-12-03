@@ -158,3 +158,246 @@ public class UpdateIssueOptions
     [Option("file", HelpText = "Path to a UTF-8 encoded file containing the description. Either --description or --file is required.")]
     public string? FilePath { get; set; }
 }
+
+// ==================== Bitbucket Commands ====================
+
+/// <summary>
+/// Options for the get-repo command.
+/// </summary>
+[Verb("get-repo", HelpText = "Retrieve a Bitbucket repository by project key and slug.")]
+public class GetRepoOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the list-repos command.
+/// </summary>
+[Verb("list-repos", HelpText = "List repositories in a Bitbucket project.")]
+public class ListReposOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('l', "limit", Default = 25, HelpText = "Maximum number of results to return.")]
+    public int Limit { get; set; } = 25;
+}
+
+/// <summary>
+/// Options for the list-branches command.
+/// </summary>
+[Verb("list-branches", HelpText = "List branches in a Bitbucket repository.")]
+public class ListBranchesOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+
+    [Option('l', "limit", Default = 25, HelpText = "Maximum number of results to return.")]
+    public int Limit { get; set; } = 25;
+}
+
+/// <summary>
+/// Options for the list-commits command.
+/// </summary>
+[Verb("list-commits", HelpText = "List commits in a Bitbucket repository.")]
+public class ListCommitsOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+
+    [Option('b', "branch", HelpText = "Filter commits by branch name.")]
+    public string? Branch { get; set; }
+
+    [Option('l', "limit", Default = 25, HelpText = "Maximum number of results to return.")]
+    public int Limit { get; set; } = 25;
+}
+
+/// <summary>
+/// Options for the get-commit command.
+/// </summary>
+[Verb("get-commit", HelpText = "Get a specific commit by ID.")]
+public class GetCommitOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+
+    [Option('c', "commit", Required = true, HelpText = "The commit ID (hash).")]
+    public string CommitId { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the list-pull-requests command.
+/// </summary>
+[Verb("list-pull-requests", HelpText = "List pull requests in a Bitbucket repository.")]
+public class ListPullRequestsOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+
+    [Option('s', "state", Default = "OPEN", HelpText = "Filter by state (OPEN, MERGED, DECLINED, ALL).")]
+    public string State { get; set; } = "OPEN";
+
+    [Option('l', "limit", Default = 25, HelpText = "Maximum number of results to return.")]
+    public int Limit { get; set; } = 25;
+}
+
+/// <summary>
+/// Options for the get-pull-request command.
+/// </summary>
+[Verb("get-pull-request", HelpText = "Get a specific pull request by ID.")]
+public class GetPullRequestOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+
+    [Option('i', "id", Required = true, HelpText = "The pull request ID.")]
+    public int PullRequestId { get; set; }
+}
+
+/// <summary>
+/// Options for the get-project command.
+/// </summary>
+[Verb("get-project", HelpText = "Get a Bitbucket project by key.")]
+public class GetProjectOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the list-projects command.
+/// </summary>
+[Verb("list-projects", HelpText = "List all Bitbucket projects.")]
+public class ListProjectsOptions
+{
+    [Option('l', "limit", Default = 25, HelpText = "Maximum number of results to return.")]
+    public int Limit { get; set; } = 25;
+}
+
+/// <summary>
+/// Options for the get-webhooks command.
+/// </summary>
+[Verb("get-webhooks", HelpText = "Get webhooks configured for a repository.")]
+public class GetWebhooksOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the get-branch-restrictions command.
+/// </summary>
+[Verb("get-branch-restrictions", HelpText = "Get branch restrictions for a repository.")]
+public class GetBranchRestrictionsOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the list-pipelines command.
+/// </summary>
+[Verb("list-pipelines", HelpText = "List pipelines (runs) for a repository (Bitbucket Cloud only).")]
+public class ListPipelinesOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The workspace/project key.")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+
+    [Option('l', "limit", Default = 25, HelpText = "Maximum number of results to return.")]
+    public int Limit { get; set; } = 25;
+}
+
+/// <summary>
+/// Options for the get-pipeline command.
+/// </summary>
+[Verb("get-pipeline", HelpText = "Get a specific pipeline by UUID (Bitbucket Cloud only).")]
+public class GetPipelineOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The workspace/project key.")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+
+    [Option('u', "uuid", Required = true, HelpText = "The pipeline UUID.")]
+    public string PipelineUuid { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the trigger-pipeline command.
+/// </summary>
+[Verb("trigger-pipeline", HelpText = "Trigger a pipeline run (Bitbucket Cloud only).")]
+public class TriggerPipelineOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The workspace/project key.")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+
+    [Option('b', "branch", Required = true, HelpText = "The branch name to run the pipeline on.")]
+    public string Branch { get; set; } = string.Empty;
+
+    [Option('c', "custom", HelpText = "Custom pipeline name to run (optional).")]
+    public string? CustomPipeline { get; set; }
+}
+
+/// <summary>
+/// Options for the stop-pipeline command.
+/// </summary>
+[Verb("stop-pipeline", HelpText = "Stop a running pipeline (Bitbucket Cloud only).")]
+public class StopPipelineOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The workspace/project key.")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+
+    [Option('u', "uuid", Required = true, HelpText = "The pipeline UUID to stop.")]
+    public string PipelineUuid { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the get-build-status command.
+/// </summary>
+[Verb("get-build-status", HelpText = "Get build statuses for a commit.")]
+public class GetBuildStatusOptions
+{
+    [Option('p', "project", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+
+    [Option('r', "repo", Required = true, HelpText = "The repository slug (e.g., my-repo).")]
+    public string RepoSlug { get; set; } = string.Empty;
+
+    [Option('c', "commit", Required = true, HelpText = "The commit ID (hash).")]
+    public string CommitId { get; set; } = string.Empty;
+}

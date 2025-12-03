@@ -485,4 +485,713 @@ public static class CommandHandlers
             }
         }
     }
+
+    // ==================== Bitbucket Handlers ====================
+
+    /// <summary>
+    /// Handles the get-repo command.
+    /// </summary>
+    public static async Task<int> HandleGetRepoAsync(GetRepoOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Fetching repository '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            var repo = await client.GetRepositoryAsync(options.ProjectKey, options.RepoSlug);
+
+            Console.WriteLine();
+            DisplayRepository(repo);
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the list-repos command.
+    /// </summary>
+    public static async Task<int> HandleListReposAsync(ListReposOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Listing repositories in project '{options.ProjectKey}'...");
+
+            var result = await client.ListRepositoriesAsync(options.ProjectKey, options.Limit);
+
+            Console.WriteLine();
+            Console.WriteLine($"=== Repositories ({result.Size}) ===");
+            foreach (var repo in result.Values)
+            {
+                Console.WriteLine($"  - {repo.Slug}: {repo.Name}");
+                if (!string.IsNullOrEmpty(repo.Description))
+                {
+                    Console.WriteLine($"    {repo.Description}");
+                }
+            }
+
+            if (!result.IsLastPage)
+            {
+                Console.WriteLine($"\n(More results available)");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the list-branches command.
+    /// </summary>
+    public static async Task<int> HandleListBranchesAsync(ListBranchesOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Listing branches in '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            var result = await client.ListBranchesAsync(options.ProjectKey, options.RepoSlug, options.Limit);
+
+            Console.WriteLine();
+            Console.WriteLine($"=== Branches ({result.Size}) ===");
+            foreach (var branch in result.Values)
+            {
+                var defaultMarker = branch.IsDefault ? " (default)" : "";
+                Console.WriteLine($"  - {branch.DisplayId}{defaultMarker}");
+                if (!string.IsNullOrEmpty(branch.LatestCommit))
+                {
+                    Console.WriteLine($"    Latest commit: {branch.LatestCommit[..Math.Min(8, branch.LatestCommit.Length)]}");
+                }
+            }
+
+            if (!result.IsLastPage)
+            {
+                Console.WriteLine($"\n(More results available)");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the list-commits command.
+    /// </summary>
+    public static async Task<int> HandleListCommitsAsync(ListCommitsOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            var branchInfo = string.IsNullOrEmpty(options.Branch) ? "" : $" on branch '{options.Branch}'";
+            Console.WriteLine($"Listing commits in '{options.ProjectKey}/{options.RepoSlug}'{branchInfo}...");
+
+            var result = await client.ListCommitsAsync(options.ProjectKey, options.RepoSlug, options.Branch, options.Limit);
+
+            Console.WriteLine();
+            Console.WriteLine($"=== Commits ({result.Size}) ===");
+            foreach (var commit in result.Values)
+            {
+                var shortId = commit.DisplayId.Length > 0 ? commit.DisplayId : commit.Id[..Math.Min(8, commit.Id.Length)];
+                var message = commit.Message.Split('\n')[0];
+                if (message.Length > 60) message = message[..57] + "...";
+
+                Console.WriteLine($"  {shortId} - {message}");
+                if (commit.Author != null)
+                {
+                    Console.WriteLine($"           by {commit.Author.Name}");
+                }
+            }
+
+            if (!result.IsLastPage)
+            {
+                Console.WriteLine($"\n(More results available)");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the get-commit command.
+    /// </summary>
+    public static async Task<int> HandleGetCommitAsync(GetCommitOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Fetching commit '{options.CommitId}' in '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            var commit = await client.GetCommitAsync(options.ProjectKey, options.RepoSlug, options.CommitId);
+
+            Console.WriteLine();
+            DisplayCommit(commit);
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the list-pull-requests command.
+    /// </summary>
+    public static async Task<int> HandleListPullRequestsAsync(ListPullRequestsOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Listing {options.State} pull requests in '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            var result = await client.ListPullRequestsAsync(options.ProjectKey, options.RepoSlug, options.State, options.Limit);
+
+            Console.WriteLine();
+            Console.WriteLine($"=== Pull Requests ({result.Size}) ===");
+            foreach (var pr in result.Values)
+            {
+                Console.WriteLine($"  #{pr.Id} [{pr.State}] {pr.Title}");
+                if (pr.FromRef != null && pr.ToRef != null)
+                {
+                    Console.WriteLine($"         {pr.FromRef.DisplayId} -> {pr.ToRef.DisplayId}");
+                }
+                if (pr.Author?.User != null)
+                {
+                    Console.WriteLine($"         by {pr.Author.User.DisplayName}");
+                }
+            }
+
+            if (!result.IsLastPage)
+            {
+                Console.WriteLine($"\n(More results available)");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the get-pull-request command.
+    /// </summary>
+    public static async Task<int> HandleGetPullRequestAsync(GetPullRequestOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Fetching pull request #{options.PullRequestId} in '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            var pr = await client.GetPullRequestAsync(options.ProjectKey, options.RepoSlug, options.PullRequestId);
+
+            Console.WriteLine();
+            DisplayPullRequest(pr);
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the get-project command.
+    /// </summary>
+    public static async Task<int> HandleGetProjectAsync(GetProjectOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Fetching project '{options.ProjectKey}'...");
+
+            var project = await client.GetProjectAsync(options.ProjectKey);
+
+            Console.WriteLine();
+            DisplayProject(project);
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the list-projects command.
+    /// </summary>
+    public static async Task<int> HandleListProjectsAsync(ListProjectsOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine("Listing projects...");
+
+            var result = await client.ListProjectsAsync(options.Limit);
+
+            Console.WriteLine();
+            Console.WriteLine($"=== Projects ({result.Size}) ===");
+            foreach (var project in result.Values)
+            {
+                Console.WriteLine($"  - {project.Key}: {project.Name}");
+                if (!string.IsNullOrEmpty(project.Description))
+                {
+                    Console.WriteLine($"    {project.Description}");
+                }
+            }
+
+            if (!result.IsLastPage)
+            {
+                Console.WriteLine($"\n(More results available)");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the get-webhooks command.
+    /// </summary>
+    public static async Task<int> HandleGetWebhooksAsync(GetWebhooksOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Fetching webhooks for '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            var result = await client.GetWebhooksAsync(options.ProjectKey, options.RepoSlug);
+
+            Console.WriteLine();
+            Console.WriteLine($"=== Webhooks ({result.Size}) ===");
+            foreach (var webhook in result.Values)
+            {
+                var status = webhook.Active ? "active" : "inactive";
+                Console.WriteLine($"  - {webhook.Name} [{status}]");
+                Console.WriteLine($"    URL: {webhook.Url}");
+                if (webhook.Events.Count > 0)
+                {
+                    Console.WriteLine($"    Events: {string.Join(", ", webhook.Events)}");
+                }
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the get-branch-restrictions command.
+    /// </summary>
+    public static async Task<int> HandleGetBranchRestrictionsAsync(GetBranchRestrictionsOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Fetching branch restrictions for '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            var result = await client.GetBranchRestrictionsAsync(options.ProjectKey, options.RepoSlug);
+
+            Console.WriteLine();
+            Console.WriteLine($"=== Branch Restrictions ({result.Size}) ===");
+            foreach (var restriction in result.Values)
+            {
+                Console.WriteLine($"  - Type: {restriction.Type}");
+                if (restriction.Matcher != null)
+                {
+                    Console.WriteLine($"    Pattern: {restriction.Matcher.DisplayId}");
+                }
+                if (restriction.Users != null && restriction.Users.Count > 0)
+                {
+                    Console.WriteLine($"    Users: {string.Join(", ", restriction.Users.Select(u => u.DisplayName))}");
+                }
+                if (restriction.Groups != null && restriction.Groups.Count > 0)
+                {
+                    Console.WriteLine($"    Groups: {string.Join(", ", restriction.Groups)}");
+                }
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the list-pipelines command.
+    /// </summary>
+    public static async Task<int> HandleListPipelinesAsync(ListPipelinesOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Listing pipelines for '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            var result = await client.ListPipelinesAsync(options.ProjectKey, options.RepoSlug, options.Limit);
+
+            Console.WriteLine();
+            Console.WriteLine($"=== Pipelines ({result.Size}) ===");
+            foreach (var pipeline in result.Values)
+            {
+                var state = pipeline.State?.Name ?? "Unknown";
+                var result_name = pipeline.State?.Result?.Name ?? "";
+                var status = !string.IsNullOrEmpty(result_name) ? $"{state} ({result_name})" : state;
+
+                Console.WriteLine($"  #{pipeline.BuildNumber} [{status}]");
+                if (pipeline.Target != null)
+                {
+                    Console.WriteLine($"    Branch: {pipeline.Target.RefName}");
+                }
+                if (!string.IsNullOrEmpty(pipeline.CreatedOn))
+                {
+                    Console.WriteLine($"    Created: {pipeline.CreatedOn}");
+                }
+                if (pipeline.DurationInSeconds.HasValue)
+                {
+                    Console.WriteLine($"    Duration: {pipeline.DurationInSeconds}s");
+                }
+            }
+
+            if (!result.IsLastPage)
+            {
+                Console.WriteLine($"\n(More results available)");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the get-pipeline command.
+    /// </summary>
+    public static async Task<int> HandleGetPipelineAsync(GetPipelineOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Fetching pipeline '{options.PipelineUuid}' in '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            var pipeline = await client.GetPipelineAsync(options.ProjectKey, options.RepoSlug, options.PipelineUuid);
+
+            Console.WriteLine();
+            DisplayPipeline(pipeline);
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the trigger-pipeline command.
+    /// </summary>
+    public static async Task<int> HandleTriggerPipelineAsync(TriggerPipelineOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            var customInfo = string.IsNullOrEmpty(options.CustomPipeline) ? "" : $" (custom: {options.CustomPipeline})";
+            Console.WriteLine($"Triggering pipeline on branch '{options.Branch}'{customInfo} for '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            var pipeline = await client.TriggerPipelineAsync(options.ProjectKey, options.RepoSlug, options.Branch, options.CustomPipeline);
+
+            Console.WriteLine();
+            Console.WriteLine("Pipeline triggered successfully!");
+            Console.WriteLine($"  Build Number: {pipeline.BuildNumber}");
+            Console.WriteLine($"  UUID:         {pipeline.Uuid}");
+            if (pipeline.State != null)
+            {
+                Console.WriteLine($"  State:        {pipeline.State.Name}");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the stop-pipeline command.
+    /// </summary>
+    public static async Task<int> HandleStopPipelineAsync(StopPipelineOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Stopping pipeline '{options.PipelineUuid}' for '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            await client.StopPipelineAsync(options.ProjectKey, options.RepoSlug, options.PipelineUuid);
+
+            Console.WriteLine();
+            Console.WriteLine("Pipeline stopped successfully!");
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the get-build-status command.
+    /// </summary>
+    public static async Task<int> HandleGetBuildStatusAsync(GetBuildStatusOptions options)
+    {
+        try
+        {
+            using var client = new BitbucketClient();
+
+            Console.WriteLine($"Fetching build statuses for commit '{options.CommitId}' in '{options.ProjectKey}/{options.RepoSlug}'...");
+
+            var result = await client.GetBuildStatusesAsync(options.ProjectKey, options.RepoSlug, options.CommitId);
+
+            Console.WriteLine();
+            Console.WriteLine($"=== Build Statuses ({result.Size}) ===");
+            foreach (var status in result.Values)
+            {
+                Console.WriteLine($"  - {status.Key}: {status.State}");
+                if (!string.IsNullOrEmpty(status.Name))
+                {
+                    Console.WriteLine($"    Name: {status.Name}");
+                }
+                if (!string.IsNullOrEmpty(status.Url))
+                {
+                    Console.WriteLine($"    URL:  {status.Url}");
+                }
+                if (!string.IsNullOrEmpty(status.Description))
+                {
+                    Console.WriteLine($"    Description: {status.Description}");
+                }
+            }
+
+            if (result.Size == 0)
+            {
+                Console.WriteLine("  (No build statuses found)");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    // ==================== Bitbucket Display Methods ====================
+
+    /// <summary>
+    /// Displays repository information to the console.
+    /// </summary>
+    private static void DisplayRepository(BitbucketRepository repo)
+    {
+        Console.WriteLine("=== Repository Information ===");
+        Console.WriteLine($"Slug:        {repo.Slug}");
+        Console.WriteLine($"Name:        {repo.Name}");
+        Console.WriteLine($"Description: {repo.Description ?? "(none)"}");
+        Console.WriteLine($"SCM:         {repo.ScmId}");
+        Console.WriteLine($"State:       {repo.State ?? "N/A"}");
+        Console.WriteLine($"Forkable:    {repo.Forkable}");
+        Console.WriteLine($"Public:      {repo.IsPublic}");
+
+        if (repo.Project != null)
+        {
+            Console.WriteLine($"Project:     {repo.Project.Key} ({repo.Project.Name})");
+        }
+
+        if (repo.Links?.Clone != null && repo.Links.Clone.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Clone URLs:");
+            foreach (var link in repo.Links.Clone)
+            {
+                Console.WriteLine($"  {link.Name}: {link.Href}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Displays commit information to the console.
+    /// </summary>
+    private static void DisplayCommit(BitbucketCommit commit)
+    {
+        Console.WriteLine("=== Commit Information ===");
+        Console.WriteLine($"ID:        {commit.Id}");
+        Console.WriteLine($"Short ID:  {commit.DisplayId}");
+        Console.WriteLine($"Message:   {commit.Message}");
+
+        if (commit.Author != null)
+        {
+            Console.WriteLine($"Author:    {commit.Author.Name} <{commit.Author.EmailAddress ?? "N/A"}>");
+        }
+
+        if (commit.Committer != null && commit.Committer.Name != commit.Author?.Name)
+        {
+            Console.WriteLine($"Committer: {commit.Committer.Name} <{commit.Committer.EmailAddress ?? "N/A"}>");
+        }
+
+        if (commit.Parents != null && commit.Parents.Count > 0)
+        {
+            var parentIds = string.Join(", ", commit.Parents.Select(p => p.DisplayId));
+            Console.WriteLine($"Parents:   {parentIds}");
+        }
+    }
+
+    /// <summary>
+    /// Displays pull request information to the console.
+    /// </summary>
+    private static void DisplayPullRequest(BitbucketPullRequest pr)
+    {
+        Console.WriteLine("=== Pull Request Information ===");
+        Console.WriteLine($"ID:          #{pr.Id}");
+        Console.WriteLine($"Title:       {pr.Title}");
+        Console.WriteLine($"State:       {pr.State}");
+        Console.WriteLine($"Description: {pr.Description ?? "(none)"}");
+
+        if (pr.FromRef != null)
+        {
+            Console.WriteLine($"From:        {pr.FromRef.DisplayId}");
+        }
+        if (pr.ToRef != null)
+        {
+            Console.WriteLine($"To:          {pr.ToRef.DisplayId}");
+        }
+
+        if (pr.Author?.User != null)
+        {
+            Console.WriteLine($"Author:      {pr.Author.User.DisplayName}");
+        }
+
+        if (pr.Reviewers != null && pr.Reviewers.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Reviewers:");
+            foreach (var reviewer in pr.Reviewers)
+            {
+                var status = reviewer.Approved ? "approved" : (reviewer.Status ?? "pending");
+                Console.WriteLine($"  - {reviewer.User?.DisplayName ?? "Unknown"}: {status}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Displays project information to the console.
+    /// </summary>
+    private static void DisplayProject(BitbucketProject project)
+    {
+        Console.WriteLine("=== Project Information ===");
+        Console.WriteLine($"Key:         {project.Key}");
+        Console.WriteLine($"Name:        {project.Name}");
+        Console.WriteLine($"Description: {project.Description ?? "(none)"}");
+        Console.WriteLine($"Public:      {project.IsPublic}");
+        Console.WriteLine($"Type:        {project.Type ?? "N/A"}");
+    }
+
+    /// <summary>
+    /// Displays pipeline information to the console.
+    /// </summary>
+    private static void DisplayPipeline(BitbucketPipeline pipeline)
+    {
+        Console.WriteLine("=== Pipeline Information ===");
+        Console.WriteLine($"Build #:     {pipeline.BuildNumber}");
+        Console.WriteLine($"UUID:        {pipeline.Uuid}");
+
+        if (pipeline.State != null)
+        {
+            var result = pipeline.State.Result?.Name ?? "";
+            var status = !string.IsNullOrEmpty(result) ? $"{pipeline.State.Name} ({result})" : pipeline.State.Name;
+            Console.WriteLine($"State:       {status}");
+        }
+
+        if (pipeline.Target != null)
+        {
+            Console.WriteLine($"Branch:      {pipeline.Target.RefName}");
+            if (pipeline.Target.Commit != null)
+            {
+                Console.WriteLine($"Commit:      {pipeline.Target.Commit.Hash}");
+            }
+        }
+
+        if (pipeline.Trigger != null)
+        {
+            Console.WriteLine($"Trigger:     {pipeline.Trigger.Type}");
+        }
+
+        if (!string.IsNullOrEmpty(pipeline.CreatedOn))
+        {
+            Console.WriteLine($"Created:     {pipeline.CreatedOn}");
+        }
+        if (!string.IsNullOrEmpty(pipeline.CompletedOn))
+        {
+            Console.WriteLine($"Completed:   {pipeline.CompletedOn}");
+        }
+        if (pipeline.DurationInSeconds.HasValue)
+        {
+            Console.WriteLine($"Duration:    {pipeline.DurationInSeconds}s");
+        }
+    }
 }

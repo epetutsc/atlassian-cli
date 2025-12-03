@@ -5,7 +5,7 @@ using AtlassianCli.Commands;
 namespace AtlassianCli;
 
 /// <summary>
-/// Atlassian CLI - A command-line interface for interacting with Confluence and Jira REST APIs.
+/// Atlassian CLI - A command-line interface for interacting with Confluence, Jira, and Bitbucket REST APIs.
 /// 
 /// Environment Variables Required:
 ///   For Confluence:
@@ -19,6 +19,12 @@ namespace AtlassianCli;
 ///     JIRA_USERNAME           - Username for authentication  
 ///     JIRA_API_TOKEN          - API token (preferred) OR
 ///     JIRA_PASSWORD           - Password (if not using API token)
+///
+///   For Bitbucket:
+///     BITBUCKET_BASE_URL      - Base URL of your Bitbucket instance (e.g., https://bitbucket.example.com or https://api.bitbucket.org)
+///     BITBUCKET_USERNAME      - Username for authentication  
+///     BITBUCKET_API_TOKEN     - API token (preferred) OR
+///     BITBUCKET_PASSWORD      - Password (if not using API token)
 /// 
 /// Confluence Usage Examples:
 ///   atlassiancli confluence create-page --space KEY --title "My Title" --body "&lt;p&gt;Hello&lt;/p&gt;"
@@ -34,6 +40,12 @@ namespace AtlassianCli;
 ///   atlassiancli jira change-status --key PROJ-123 --status "In Progress"
 ///   atlassiancli jira assign-user --key PROJ-123 --user john.doe
 ///   atlassiancli jira update-issue --key PROJ-123 --description "Updated description"
+///
+/// Bitbucket Usage Examples:
+///   atlassiancli bitbucket get-repo --project PROJ --repo my-repo
+///   atlassiancli bitbucket list-branches --project PROJ --repo my-repo
+///   atlassiancli bitbucket list-pull-requests --project PROJ --repo my-repo --state OPEN
+///   atlassiancli bitbucket trigger-pipeline --project PROJ --repo my-repo --branch main
 /// </summary>
 public static class Program
 {
@@ -70,6 +82,7 @@ public static class Program
         {
             "confluence" => await HandleConfluenceAsync(subArgs, parser),
             "jira" => await HandleJiraAsync(subArgs, parser),
+            "bitbucket" => await HandleBitbucketAsync(subArgs, parser),
             _ => HandleUnknownSubCommand(args[0])
         };
     }
@@ -81,7 +94,7 @@ public static class Program
     {
         Console.Error.WriteLine($"Error: Unknown sub-command '{command}'.");
         Console.Error.WriteLine();
-        Console.Error.WriteLine("Available sub-commands: confluence, jira");
+        Console.Error.WriteLine("Available sub-commands: confluence, jira, bitbucket");
         Console.Error.WriteLine();
         Console.Error.WriteLine("Use 'atlassiancli --help' for more information.");
         return 1;
@@ -135,17 +148,56 @@ public static class Program
     }
 
     /// <summary>
+    /// Handles Bitbucket sub-commands.
+    /// </summary>
+    private static async Task<int> HandleBitbucketAsync(string[] args, Parser parser)
+    {
+        if (args.Length == 0)
+        {
+            ShowBitbucketHelp();
+            return 0;
+        }
+
+        var parserResult = parser.ParseArguments<
+            GetRepoOptions, ListReposOptions, ListBranchesOptions, ListCommitsOptions, GetCommitOptions,
+            ListPullRequestsOptions, GetPullRequestOptions, GetProjectOptions, ListProjectsOptions,
+            GetWebhooksOptions, GetBranchRestrictionsOptions, ListPipelinesOptions, GetPipelineOptions,
+            TriggerPipelineOptions, StopPipelineOptions, GetBuildStatusOptions>(args);
+
+        return await parserResult.MapResult(
+            async (GetRepoOptions opts) => await CommandHandlers.HandleGetRepoAsync(opts),
+            async (ListReposOptions opts) => await CommandHandlers.HandleListReposAsync(opts),
+            async (ListBranchesOptions opts) => await CommandHandlers.HandleListBranchesAsync(opts),
+            async (ListCommitsOptions opts) => await CommandHandlers.HandleListCommitsAsync(opts),
+            async (GetCommitOptions opts) => await CommandHandlers.HandleGetCommitAsync(opts),
+            async (ListPullRequestsOptions opts) => await CommandHandlers.HandleListPullRequestsAsync(opts),
+            async (GetPullRequestOptions opts) => await CommandHandlers.HandleGetPullRequestAsync(opts),
+            async (GetProjectOptions opts) => await CommandHandlers.HandleGetProjectAsync(opts),
+            async (ListProjectsOptions opts) => await CommandHandlers.HandleListProjectsAsync(opts),
+            async (GetWebhooksOptions opts) => await CommandHandlers.HandleGetWebhooksAsync(opts),
+            async (GetBranchRestrictionsOptions opts) => await CommandHandlers.HandleGetBranchRestrictionsAsync(opts),
+            async (ListPipelinesOptions opts) => await CommandHandlers.HandleListPipelinesAsync(opts),
+            async (GetPipelineOptions opts) => await CommandHandlers.HandleGetPipelineAsync(opts),
+            async (TriggerPipelineOptions opts) => await CommandHandlers.HandleTriggerPipelineAsync(opts),
+            async (StopPipelineOptions opts) => await CommandHandlers.HandleStopPipelineAsync(opts),
+            async (GetBuildStatusOptions opts) => await CommandHandlers.HandleGetBuildStatusAsync(opts),
+            async errs => await HandleBitbucketParseErrorsAsync(parserResult, errs)
+        );
+    }
+
+    /// <summary>
     /// Displays the welcome message with CLI information.
     /// </summary>
     private static void ShowWelcome()
     {
-        Console.WriteLine("Atlassian CLI - Command-line interface for Confluence and Jira REST APIs");
+        Console.WriteLine("Atlassian CLI - Command-line interface for Confluence, Jira, and Bitbucket REST APIs");
         Console.WriteLine();
-        Console.WriteLine("Usage: atlassiancli <confluence|jira> <command> [options]");
+        Console.WriteLine("Usage: atlassiancli <confluence|jira|bitbucket> <command> [options]");
         Console.WriteLine();
         Console.WriteLine("Sub-commands:");
         Console.WriteLine("  confluence    Confluence commands for managing pages");
         Console.WriteLine("  jira          Jira commands for managing issues");
+        Console.WriteLine("  bitbucket     Bitbucket commands for repositories, branches, and pipelines");
         Console.WriteLine();
         Console.WriteLine("Confluence Environment Variables:");
         Console.WriteLine("  CONFLUENCE_BASE_URL     Base URL of your Confluence instance");
@@ -166,6 +218,17 @@ public static class Program
         Console.WriteLine("  JIRA_API_TOKEN          API token (preferred for security)");
         Console.WriteLine("                          OR");
         Console.WriteLine("  JIRA_PASSWORD           Password (if not using API token)");
+        Console.WriteLine();
+        Console.WriteLine("Bitbucket Environment Variables:");
+        Console.WriteLine("  BITBUCKET_BASE_URL      Base URL of your Bitbucket instance");
+        Console.WriteLine("                          Example: https://bitbucket.example.com (Server)");
+        Console.WriteLine("                          Example: https://api.bitbucket.org (Cloud)");
+        Console.WriteLine();
+        Console.WriteLine("  BITBUCKET_USERNAME      Username for authentication");
+        Console.WriteLine();
+        Console.WriteLine("  BITBUCKET_API_TOKEN     API token (preferred for security)");
+        Console.WriteLine("                          OR");
+        Console.WriteLine("  BITBUCKET_PASSWORD      Password (if not using API token)");
     }
 
     /// <summary>
@@ -183,7 +246,13 @@ public static class Program
         Console.WriteLine("  atlassiancli jira create-issue --project PROJ --summary \"Task\" --type Task");
         Console.WriteLine("  atlassiancli jira add-comment --key PROJ-123 --body \"My comment\"");
         Console.WriteLine();
-        Console.WriteLine("Use 'atlassiancli <confluence|jira>' for more information about a sub-command.");
+        Console.WriteLine("Bitbucket Examples:");
+        Console.WriteLine("  atlassiancli bitbucket get-repo --project PROJ --repo my-repo");
+        Console.WriteLine("  atlassiancli bitbucket list-branches --project PROJ --repo my-repo");
+        Console.WriteLine("  atlassiancli bitbucket list-pull-requests --project PROJ --repo my-repo");
+        Console.WriteLine("  atlassiancli bitbucket trigger-pipeline --project PROJ --repo my-repo --branch main");
+        Console.WriteLine();
+        Console.WriteLine("Use 'atlassiancli <confluence|jira|bitbucket>' for more information about a sub-command.");
     }
 
     /// <summary>
@@ -303,6 +372,95 @@ public static class Program
             h.AddPreOptionsLine("  atlassiancli jira change-status --key PROJ-123 --status \"In Progress\"");
             h.AddPreOptionsLine("  atlassiancli jira assign-user --key PROJ-123 --user john.doe");
             h.AddPreOptionsLine("  atlassiancli jira update-issue --key PROJ-123 --description \"Updated\"");
+            return h;
+        }, e => e);
+
+        Console.WriteLine(helpText);
+
+        if (errors.IsHelp() || errors.IsVersion())
+        {
+            return Task.FromResult(0);
+        }
+
+        return Task.FromResult(1);
+    }
+
+    /// <summary>
+    /// Displays help for Bitbucket sub-commands.
+    /// </summary>
+    private static void ShowBitbucketHelp()
+    {
+        Console.WriteLine("Atlassian CLI - Bitbucket Commands");
+        Console.WriteLine();
+        Console.WriteLine("Usage: atlassiancli bitbucket <command> [options]");
+        Console.WriteLine();
+        Console.WriteLine("Read Commands:");
+        Console.WriteLine("  get-repo                Get repository details");
+        Console.WriteLine("  list-repos              List repositories in a project");
+        Console.WriteLine("  list-branches           List branches in a repository");
+        Console.WriteLine("  list-commits            List commits in a repository");
+        Console.WriteLine("  get-commit              Get a specific commit");
+        Console.WriteLine("  list-pull-requests      List pull requests in a repository");
+        Console.WriteLine("  get-pull-request        Get a specific pull request");
+        Console.WriteLine("  get-project             Get project details");
+        Console.WriteLine("  list-projects           List all projects");
+        Console.WriteLine();
+        Console.WriteLine("Configuration Commands:");
+        Console.WriteLine("  get-webhooks            Get webhooks for a repository");
+        Console.WriteLine("  get-branch-restrictions Get branch restrictions for a repository");
+        Console.WriteLine("  get-build-status        Get build statuses for a commit");
+        Console.WriteLine();
+        Console.WriteLine("Pipeline Commands (Bitbucket Cloud only):");
+        Console.WriteLine("  list-pipelines          List pipeline runs");
+        Console.WriteLine("  get-pipeline            Get a specific pipeline");
+        Console.WriteLine("  trigger-pipeline        Trigger a pipeline run");
+        Console.WriteLine("  stop-pipeline           Stop a running pipeline");
+        Console.WriteLine();
+        Console.WriteLine("Examples:");
+        Console.WriteLine("  atlassiancli bitbucket get-repo --project PROJ --repo my-repo");
+        Console.WriteLine("  atlassiancli bitbucket list-branches --project PROJ --repo my-repo");
+        Console.WriteLine("  atlassiancli bitbucket list-pull-requests --project PROJ --repo my-repo --state OPEN");
+        Console.WriteLine("  atlassiancli bitbucket trigger-pipeline --project PROJ --repo my-repo --branch main");
+        Console.WriteLine();
+        Console.WriteLine("Use 'atlassiancli bitbucket <command> --help' for more information about a command.");
+    }
+
+    /// <summary>
+    /// Handles parsing errors for Bitbucket sub-commands.
+    /// </summary>
+    private static Task<int> HandleBitbucketParseErrorsAsync<T>(ParserResult<T> result, IEnumerable<Error> errors)
+    {
+        var helpText = HelpText.AutoBuild(result, h =>
+        {
+            h.AdditionalNewLineAfterOption = false;
+            h.Heading = "Atlassian CLI v1.0.0 - Bitbucket";
+            h.Copyright = "Commands for managing Bitbucket repositories and pipelines";
+            h.AddPreOptionsLine("");
+            h.AddPreOptionsLine("Usage: atlassiancli bitbucket <command> [options]");
+            h.AddPreOptionsLine("");
+            h.AddPreOptionsLine("Commands:");
+            h.AddPreOptionsLine("  get-repo                Get repository details");
+            h.AddPreOptionsLine("  list-repos              List repositories in a project");
+            h.AddPreOptionsLine("  list-branches           List branches in a repository");
+            h.AddPreOptionsLine("  list-commits            List commits in a repository");
+            h.AddPreOptionsLine("  get-commit              Get a specific commit");
+            h.AddPreOptionsLine("  list-pull-requests      List pull requests in a repository");
+            h.AddPreOptionsLine("  get-pull-request        Get a specific pull request");
+            h.AddPreOptionsLine("  get-project             Get project details");
+            h.AddPreOptionsLine("  list-projects           List all projects");
+            h.AddPreOptionsLine("  get-webhooks            Get webhooks for a repository");
+            h.AddPreOptionsLine("  get-branch-restrictions Get branch restrictions");
+            h.AddPreOptionsLine("  get-build-status        Get build statuses for a commit");
+            h.AddPreOptionsLine("  list-pipelines          List pipeline runs (Cloud only)");
+            h.AddPreOptionsLine("  get-pipeline            Get a specific pipeline (Cloud only)");
+            h.AddPreOptionsLine("  trigger-pipeline        Trigger a pipeline run (Cloud only)");
+            h.AddPreOptionsLine("  stop-pipeline           Stop a running pipeline (Cloud only)");
+            h.AddPreOptionsLine("");
+            h.AddPreOptionsLine("Examples:");
+            h.AddPreOptionsLine("  atlassiancli bitbucket get-repo --project PROJ --repo my-repo");
+            h.AddPreOptionsLine("  atlassiancli bitbucket list-branches --project PROJ --repo my-repo");
+            h.AddPreOptionsLine("  atlassiancli bitbucket list-pull-requests --project PROJ --repo my-repo");
+            h.AddPreOptionsLine("  atlassiancli bitbucket trigger-pipeline --project PROJ --repo my-repo --branch main");
             return h;
         }, e => e);
 
