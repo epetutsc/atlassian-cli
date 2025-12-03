@@ -87,7 +87,7 @@ public sealed class JiraClient : IDisposable
     public async Task<JiraIssue> GetIssueAsync(string issueKey)
     {
         var url = $"{_baseUrl}/rest/api/2/issue/{issueKey}?expand=renderedFields";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"getting issue {issueKey}");
 
@@ -117,7 +117,7 @@ public sealed class JiraClient : IDisposable
         };
 
         var url = $"{_baseUrl}/rest/api/2/issue";
-        var response = await _httpClient.PostAsJsonAsync(url, request, _jsonOptions);
+        var response = await HttpClientHelper.PostAsJsonAsync(_httpClient, url, request, _jsonOptions);
 
         await EnsureSuccessAsync(response, "creating issue");
 
@@ -136,7 +136,7 @@ public sealed class JiraClient : IDisposable
         var request = new AddJiraCommentRequest { Body = body };
 
         var url = $"{_baseUrl}/rest/api/2/issue/{issueKey}/comment";
-        var response = await _httpClient.PostAsJsonAsync(url, request, _jsonOptions);
+        var response = await HttpClientHelper.PostAsJsonAsync(_httpClient, url, request, _jsonOptions);
 
         await EnsureSuccessAsync(response, $"adding comment to issue {issueKey}");
 
@@ -152,7 +152,7 @@ public sealed class JiraClient : IDisposable
     public async Task<List<JiraTransition>> GetTransitionsAsync(string issueKey)
     {
         var url = $"{_baseUrl}/rest/api/2/issue/{issueKey}/transitions";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"getting transitions for issue {issueKey}");
 
@@ -187,7 +187,7 @@ public sealed class JiraClient : IDisposable
         };
 
         var url = $"{_baseUrl}/rest/api/2/issue/{issueKey}/transitions";
-        var response = await _httpClient.PostAsJsonAsync(url, request, _jsonOptions);
+        var response = await HttpClientHelper.PostAsJsonAsync(_httpClient, url, request, _jsonOptions);
 
         await EnsureSuccessAsync(response, $"transitioning issue {issueKey} to {statusName}");
     }
@@ -201,7 +201,7 @@ public sealed class JiraClient : IDisposable
     {
         var encodedQuery = Uri.EscapeDataString(query);
         var url = $"{_baseUrl}/rest/api/2/user/search?query={encodedQuery}";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"searching for user '{query}'");
 
@@ -236,7 +236,7 @@ public sealed class JiraClient : IDisposable
         }
 
         var url = $"{_baseUrl}/rest/api/2/issue/{issueKey}/assignee";
-        var response = await _httpClient.PutAsJsonAsync(url, request, _jsonOptions);
+        var response = await HttpClientHelper.PutAsJsonAsync(_httpClient, url, request, _jsonOptions);
 
         await EnsureSuccessAsync(response, $"assigning user '{username}' to issue {issueKey}");
     }
@@ -257,7 +257,7 @@ public sealed class JiraClient : IDisposable
         };
 
         var url = $"{_baseUrl}/rest/api/2/issue/{issueKey}";
-        var response = await _httpClient.PutAsJsonAsync(url, request, _jsonOptions);
+        var response = await HttpClientHelper.PutAsJsonAsync(_httpClient, url, request, _jsonOptions);
 
         await EnsureSuccessAsync(response, $"updating description of issue {issueKey}");
     }

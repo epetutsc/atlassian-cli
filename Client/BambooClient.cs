@@ -94,7 +94,7 @@ public sealed class BambooClient : IDisposable
     public async Task<List<BambooProject>> GetProjectsAsync()
     {
         var url = $"{_baseUrl}/rest/api/latest/project?expand=projects.project.plans&max-result=1000";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, "getting projects");
 
@@ -110,7 +110,7 @@ public sealed class BambooClient : IDisposable
     public async Task<BambooProject> GetProjectAsync(string projectKey)
     {
         var url = $"{_baseUrl}/rest/api/latest/project/{projectKey}?expand=plans.plan";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"getting project {projectKey}");
 
@@ -127,7 +127,7 @@ public sealed class BambooClient : IDisposable
     public async Task<List<BambooPlan>> GetPlansAsync()
     {
         var url = $"{_baseUrl}/rest/api/latest/plan?max-result=1000";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, "getting plans");
 
@@ -143,7 +143,7 @@ public sealed class BambooClient : IDisposable
     public async Task<BambooPlan> GetPlanAsync(string planKey)
     {
         var url = $"{_baseUrl}/rest/api/latest/plan/{planKey}?expand=stages,branches,variableContext";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"getting plan {planKey}");
 
@@ -159,7 +159,7 @@ public sealed class BambooClient : IDisposable
     public async Task<List<BambooBranch>> GetPlanBranchesAsync(string planKey)
     {
         var url = $"{_baseUrl}/rest/api/latest/plan/{planKey}/branch?max-result=1000";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"getting branches for plan {planKey}");
 
@@ -178,7 +178,7 @@ public sealed class BambooClient : IDisposable
     public async Task<List<BambooBuildResult>> GetBuildResultsAsync(string planKey, int maxResults = 25)
     {
         var url = $"{_baseUrl}/rest/api/latest/result/{planKey}?expand=results.result&max-result={maxResults}";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"getting build results for plan {planKey}");
 
@@ -194,7 +194,7 @@ public sealed class BambooClient : IDisposable
     public async Task<BambooBuildResult> GetBuildResultAsync(string buildResultKey)
     {
         var url = $"{_baseUrl}/rest/api/latest/result/{buildResultKey}?expand=stages.stage,changes.change";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"getting build result {buildResultKey}");
 
@@ -210,7 +210,7 @@ public sealed class BambooClient : IDisposable
     public async Task<BambooBuildResult> GetLatestBuildResultAsync(string planKey)
     {
         var url = $"{_baseUrl}/rest/api/latest/result/{planKey}/latest?expand=stages.stage,changes.change";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"getting latest build result for plan {planKey}");
 
@@ -228,8 +228,8 @@ public sealed class BambooClient : IDisposable
     public async Task<string> GetBuildLogsAsync(string buildResultKey)
     {
         // Bamboo returns logs as plain text at this endpoint
-        var url = $"{_baseUrl}/rest/api/latest/result/{buildResultKey}?expand=logEntries&max-results={MaxLogEntries}";
-        var response = await _httpClient.GetAsync(url);
+        var url = $"{_baseUrl}/rest/api/latest/result/{buildResultKey}?expand=logEntries&max-result={MaxLogEntries}";
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"getting build logs for {buildResultKey}");
 
@@ -253,14 +253,14 @@ public sealed class BambooClient : IDisposable
     public async Task<string> GetBuildLogDownloadAsync(string buildResultKey)
     {
         var url = $"{_baseUrl}/download/{buildResultKey}/build_logs/{buildResultKey}.log";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         // If download endpoint doesn't work, try the browse endpoint
         if (!response.IsSuccessStatusCode)
         {
             response.Dispose();
             url = $"{_baseUrl}/browse/{buildResultKey}/log";
-            response = await _httpClient.GetAsync(url);
+            response = await HttpClientHelper.GetAsync(_httpClient, url);
         }
 
         await EnsureSuccessAsync(response, $"downloading build logs for {buildResultKey}");
@@ -278,7 +278,7 @@ public sealed class BambooClient : IDisposable
     {
         // Job logs are available at a different endpoint
         var url = $"{_baseUrl}/download/{buildResultKey}/build_logs/{jobKey}.log";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"getting job logs for {jobKey} in build {buildResultKey}");
 
@@ -295,7 +295,7 @@ public sealed class BambooClient : IDisposable
     public async Task<BambooQueueResponse> QueueBuildAsync(string planKey)
     {
         var url = $"{_baseUrl}/rest/api/latest/queue/{planKey}";
-        var response = await _httpClient.PostAsync(url, null);
+        var response = await HttpClientHelper.PostAsync(_httpClient, url, null);
 
         await EnsureSuccessAsync(response, $"queuing build for plan {planKey}");
 
@@ -313,7 +313,7 @@ public sealed class BambooClient : IDisposable
     {
         var encodedBranch = Uri.EscapeDataString(branchName);
         var url = $"{_baseUrl}/rest/api/latest/queue/{planKey}/branch/{encodedBranch}";
-        var response = await _httpClient.PostAsync(url, null);
+        var response = await HttpClientHelper.PostAsync(_httpClient, url, null);
 
         await EnsureSuccessAsync(response, $"queuing build for plan {planKey} branch {branchName}");
 

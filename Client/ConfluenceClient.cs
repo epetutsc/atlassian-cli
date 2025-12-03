@@ -103,7 +103,7 @@ public sealed class ConfluenceClient : IDisposable
         };
 
         var url = $"{_baseUrl}/rest/api/content";
-        var response = await _httpClient.PostAsJsonAsync(url, request, _jsonOptions);
+        var response = await HttpClientHelper.PostAsJsonAsync(_httpClient, url, request, _jsonOptions);
 
         await EnsureSuccessAsync(response, "creating page");
 
@@ -120,7 +120,7 @@ public sealed class ConfluenceClient : IDisposable
     public async Task<ConfluencePage> GetPageByIdAsync(string pageId, string expand = "body.storage,body.view,version,space")
     {
         var url = $"{_baseUrl}/rest/api/content/{pageId}?expand={expand}";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"getting page with ID {pageId}");
 
@@ -139,7 +139,7 @@ public sealed class ConfluenceClient : IDisposable
     {
         var encodedTitle = Uri.EscapeDataString(title);
         var url = $"{_baseUrl}/rest/api/content?spaceKey={spaceKey}&title={encodedTitle}&expand={expand}";
-        var response = await _httpClient.GetAsync(url);
+        var response = await HttpClientHelper.GetAsync(_httpClient, url);
 
         await EnsureSuccessAsync(response, $"searching for page '{title}' in space '{spaceKey}'");
 
@@ -184,7 +184,7 @@ public sealed class ConfluenceClient : IDisposable
         };
 
         var url = $"{_baseUrl}/rest/api/content/{pageId}";
-        var response = await _httpClient.PutAsJsonAsync(url, request, _jsonOptions);
+        var response = await HttpClientHelper.PutAsJsonAsync(_httpClient, url, request, _jsonOptions);
 
         await EnsureSuccessAsync(response, $"updating page with ID {pageId}");
 
