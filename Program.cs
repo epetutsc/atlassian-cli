@@ -116,9 +116,9 @@ public static class Program
         var parserResult = parser.ParseArguments<CreatePageOptions, GetPageOptions, UpdatePageOptions>(args);
 
         return await parserResult.MapResult(
-            async (CreatePageOptions opts) => await CommandHandlers.HandleCreatePageAsync(opts),
-            async (GetPageOptions opts) => await CommandHandlers.HandleGetPageAsync(opts),
-            async (UpdatePageOptions opts) => await CommandHandlers.HandleUpdatePageAsync(opts),
+            async (CreatePageOptions opts) => await ConfluenceCommandHandlers.HandleCreatePageAsync(opts),
+            async (GetPageOptions opts) => await ConfluenceCommandHandlers.HandleGetPageAsync(opts),
+            async (UpdatePageOptions opts) => await ConfluenceCommandHandlers.HandleUpdatePageAsync(opts),
             async errs => await HandleConfluenceParseErrorsAsync(parserResult, errs)
         );
     }
@@ -139,12 +139,12 @@ public static class Program
             ChangeStatusOptions, AssignUserOptions, UpdateIssueOptions>(args);
 
         return await parserResult.MapResult(
-            async (GetIssueOptions opts) => await CommandHandlers.HandleGetIssueAsync(opts),
-            async (CreateIssueOptions opts) => await CommandHandlers.HandleCreateIssueAsync(opts),
-            async (AddCommentOptions opts) => await CommandHandlers.HandleAddCommentAsync(opts),
-            async (ChangeStatusOptions opts) => await CommandHandlers.HandleChangeStatusAsync(opts),
-            async (AssignUserOptions opts) => await CommandHandlers.HandleAssignUserAsync(opts),
-            async (UpdateIssueOptions opts) => await CommandHandlers.HandleUpdateIssueAsync(opts),
+            async (GetIssueOptions opts) => await JiraCommandHandlers.HandleGetIssueAsync(opts),
+            async (CreateIssueOptions opts) => await JiraCommandHandlers.HandleCreateIssueAsync(opts),
+            async (AddCommentOptions opts) => await JiraCommandHandlers.HandleAddCommentAsync(opts),
+            async (ChangeStatusOptions opts) => await JiraCommandHandlers.HandleChangeStatusAsync(opts),
+            async (AssignUserOptions opts) => await JiraCommandHandlers.HandleAssignUserAsync(opts),
+            async (UpdateIssueOptions opts) => await JiraCommandHandlers.HandleUpdateIssueAsync(opts),
             async errs => await HandleJiraParseErrorsAsync(parserResult, errs)
         );
     }
@@ -167,16 +167,16 @@ public static class Program
             GetBambooBuildLogsOptions>(args);
 
         return await parserResult.MapResult(
-            async (GetBambooProjectsOptions opts) => await CommandHandlers.HandleGetBambooProjectsAsync(opts),
-            async (GetBambooProjectOptions opts) => await CommandHandlers.HandleGetBambooProjectAsync(opts),
-            async (GetBambooPlansOptions opts) => await CommandHandlers.HandleGetBambooPlansAsync(opts),
-            async (GetBambooPlanOptions opts) => await CommandHandlers.HandleGetBambooPlanAsync(opts),
-            async (GetBambooBranchesOptions opts) => await CommandHandlers.HandleGetBambooBranchesAsync(opts),
-            async (GetBambooBuildsOptions opts) => await CommandHandlers.HandleGetBambooBuildsAsync(opts),
-            async (GetBambooBuildOptions opts) => await CommandHandlers.HandleGetBambooBuildAsync(opts),
-            async (GetBambooLatestBuildOptions opts) => await CommandHandlers.HandleGetBambooLatestBuildAsync(opts),
-            async (QueueBambooBuildOptions opts) => await CommandHandlers.HandleQueueBambooBuildAsync(opts),
-            async (GetBambooBuildLogsOptions opts) => await CommandHandlers.HandleGetBambooBuildLogsAsync(opts),
+            async (GetBambooProjectsOptions opts) => await BambooCommandHandlers.HandleGetBambooProjectsAsync(opts),
+            async (GetBambooProjectOptions opts) => await BambooCommandHandlers.HandleGetBambooProjectAsync(opts),
+            async (GetBambooPlansOptions opts) => await BambooCommandHandlers.HandleGetBambooPlansAsync(opts),
+            async (GetBambooPlanOptions opts) => await BambooCommandHandlers.HandleGetBambooPlanAsync(opts),
+            async (GetBambooBranchesOptions opts) => await BambooCommandHandlers.HandleGetBambooBranchesAsync(opts),
+            async (GetBambooBuildsOptions opts) => await BambooCommandHandlers.HandleGetBambooBuildsAsync(opts),
+            async (GetBambooBuildOptions opts) => await BambooCommandHandlers.HandleGetBambooBuildAsync(opts),
+            async (GetBambooLatestBuildOptions opts) => await BambooCommandHandlers.HandleGetBambooLatestBuildAsync(opts),
+            async (QueueBambooBuildOptions opts) => await BambooCommandHandlers.HandleQueueBambooBuildAsync(opts),
+            async (GetBambooBuildLogsOptions opts) => await BambooCommandHandlers.HandleGetBambooBuildLogsAsync(opts),
             async errs => await HandleBambooParseErrorsAsync(parserResult, errs)
         );
     }
