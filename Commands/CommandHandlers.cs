@@ -5,7 +5,7 @@ using System.Text;
 namespace AtlassianCli.Commands;
 
 /// <summary>
-/// Handles execution of CLI commands for Confluence and Jira operations.
+/// Handles execution of CLI commands for Confluence, Jira, and Bamboo operations.
 /// </summary>
 public static class CommandHandlers
 {
