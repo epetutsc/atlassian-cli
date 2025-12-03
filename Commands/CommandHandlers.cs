@@ -608,8 +608,21 @@ public static class CommandHandlers
             Console.WriteLine($"=== Commits ({result.Size}) ===");
             foreach (var commit in result.Values)
             {
-                var shortId = commit.DisplayId.Length > 0 ? commit.DisplayId : commit.Id[..Math.Min(8, commit.Id.Length)];
-                var message = commit.Message.Split('\n')[0];
+                string shortId;
+                if (!string.IsNullOrEmpty(commit.DisplayId))
+                {
+                    shortId = commit.DisplayId;
+                }
+                else if (!string.IsNullOrEmpty(commit.Id))
+                {
+                    shortId = commit.Id[..Math.Min(8, commit.Id.Length)];
+                }
+                else
+                {
+                    shortId = "unknown";
+                }
+
+                var message = !string.IsNullOrEmpty(commit.Message) ? commit.Message.Split('\n')[0] : "(no message)";
                 if (message.Length > 60) message = message[..57] + "...";
 
                 Console.WriteLine($"  {shortId} - {message}");

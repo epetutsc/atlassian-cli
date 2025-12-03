@@ -506,7 +506,7 @@ public sealed class BitbucketClient : IDisposable
             throw new InvalidOperationException("Pipelines are only available for Bitbucket Cloud.");
         }
 
-        var url = $"{_baseUrl}/2.0/repositories/{projectKey}/{repoSlug}/pipelines/{pipelineUuid}/stopPipeline";
+        var url = $"{_baseUrl}/2.0/repositories/{projectKey}/{repoSlug}/pipelines/{pipelineUuid}/stop";
 
         var response = await _httpClient.PostAsync(url, null);
         await EnsureSuccessAsync(response, $"stopping pipeline {pipelineUuid} for {projectKey}/{repoSlug}");
