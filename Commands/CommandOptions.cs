@@ -158,3 +158,99 @@ public class UpdateIssueOptions
     [Option("file", HelpText = "Path to a UTF-8 encoded file containing the description. Either --description or --file is required.")]
     public string? FilePath { get; set; }
 }
+
+// ==================== Bamboo Commands ====================
+
+/// <summary>
+/// Options for the get-projects command.
+/// </summary>
+[Verb("get-projects", HelpText = "List all Bamboo projects.")]
+public class GetBambooProjectsOptions
+{
+}
+
+/// <summary>
+/// Options for the get-project command.
+/// </summary>
+[Verb("get-project", HelpText = "Retrieve a Bamboo project by key.")]
+public class GetBambooProjectOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The project key (e.g., PROJ).")]
+    public string ProjectKey { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the get-plans command.
+/// </summary>
+[Verb("get-plans", HelpText = "List all Bamboo plans or plans for a specific project.")]
+public class GetBambooPlansOptions
+{
+    [Option('p', "project", Required = false, HelpText = "Filter plans by project key (optional).")]
+    public string? ProjectKey { get; set; }
+}
+
+/// <summary>
+/// Options for the get-plan command.
+/// </summary>
+[Verb("get-plan", HelpText = "Retrieve a Bamboo plan by key (includes configuration).")]
+public class GetBambooPlanOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The plan key (e.g., PROJ-PLAN).")]
+    public string PlanKey { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the get-branches command.
+/// </summary>
+[Verb("get-branches", HelpText = "List branches for a Bamboo plan.")]
+public class GetBambooBranchesOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The plan key (e.g., PROJ-PLAN).")]
+    public string PlanKey { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the get-builds command.
+/// </summary>
+[Verb("get-builds", HelpText = "List build results for a Bamboo plan.")]
+public class GetBambooBuildsOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The plan key (e.g., PROJ-PLAN).")]
+    public string PlanKey { get; set; } = string.Empty;
+
+    [Option('n', "max-results", Default = 25, HelpText = "Maximum number of build results to return (default: 25).")]
+    public int MaxResults { get; set; } = 25;
+}
+
+/// <summary>
+/// Options for the get-build command.
+/// </summary>
+[Verb("get-build", HelpText = "Retrieve a specific build result.")]
+public class GetBambooBuildOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The build result key (e.g., PROJ-PLAN-123).")]
+    public string BuildKey { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the get-latest-build command.
+/// </summary>
+[Verb("get-latest-build", HelpText = "Retrieve the latest build result for a plan.")]
+public class GetBambooLatestBuildOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The plan key (e.g., PROJ-PLAN).")]
+    public string PlanKey { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Options for the queue-build command.
+/// </summary>
+[Verb("queue-build", HelpText = "Queue a new build for a plan (trigger a build).")]
+public class QueueBambooBuildOptions
+{
+    [Option('k', "key", Required = true, HelpText = "The plan key (e.g., PROJ-PLAN).")]
+    public string PlanKey { get; set; } = string.Empty;
+
+    [Option('b', "branch", Required = false, HelpText = "Branch name to build (optional, builds default branch if not specified).")]
+    public string? Branch { get; set; }
+}

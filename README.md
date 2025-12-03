@@ -1,6 +1,6 @@
 # Atlassian CLI
 
-A .NET tool that provides a command-line interface to interact with self-hosted Confluence and Jira (on-prem) instances via their REST APIs.
+A .NET tool that provides a command-line interface to interact with self-hosted Confluence, Jira, and Bamboo (on-prem) instances via their REST APIs.
 
 ## Installation
 
@@ -50,15 +50,23 @@ dotnet tool uninstall --global AtlassianCli
 - **Assign users** to issues
 - **Update issue descriptions**
 
+### Bamboo
+- **List projects** and view project details
+- **List plans** and view plan configuration
+- **List branches** for a plan
+- **View build results** for plans
+- **Get build details** including stages, changes, and test results
+- **Trigger builds** (queue builds for plans and branches)
+
 ### General
 - Environment variable-based configuration
 - Comprehensive help system
-- Hierarchical sub-commands (confluence/jira)
+- Hierarchical sub-commands (confluence/jira/bamboo)
 
 ## Requirements
 
 - .NET 10.0 SDK or later
-- Access to a Confluence and/or Jira instance with REST API enabled
+- Access to a Confluence, Jira, and/or Bamboo instance with REST API enabled
 
 ## Configuration
 
@@ -97,6 +105,15 @@ The CLI supports three authentication methods (in order of preference):
 | `JIRA_USERNAME` | Conditional | Username for Basic auth (required with API token for Cloud, or with password) |
 | `JIRA_PASSWORD` | Conditional | Password for Basic auth (use with username) |
 
+### Bamboo Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `BAMBOO_BASE_URL` | Yes | Base URL of your Bamboo instance (e.g., `https://bamboo.example.com`) |
+| `BAMBOO_API_TOKEN` | Conditional | Personal Access Token for Bearer auth (use alone), or API token (use with username) |
+| `BAMBOO_USERNAME` | Conditional | Username for Basic auth (required with API token for Cloud, or with password) |
+| `BAMBOO_PASSWORD` | Conditional | Password for Basic auth (use with username) |
+
 ### Example Configurations
 
 #### Bearer Token (Personal Access Token) - On-Premises
@@ -123,6 +140,10 @@ export CONFLUENCE_API_TOKEN=your-api-token
 export JIRA_BASE_URL=https://your-domain.atlassian.net
 export JIRA_USERNAME=your.email@example.com
 export JIRA_API_TOKEN=your-api-token
+
+# Bamboo with PAT
+export BAMBOO_BASE_URL=https://bamboo.example.com
+export BAMBOO_API_TOKEN=your-personal-access-token
 ```
 
 ## Building
@@ -133,7 +154,7 @@ dotnet build
 
 ## Usage
 
-The CLI uses a hierarchical command structure where you first specify the service (`confluence` or `jira`) followed by the specific command.
+The CLI uses a hierarchical command structure where you first specify the service (`confluence`, `jira`, or `bamboo`) followed by the specific command.
 
 ### Show Help
 
@@ -141,6 +162,7 @@ The CLI uses a hierarchical command structure where you first specify the servic
 dotnet run -- --help
 dotnet run -- confluence --help
 dotnet run -- jira --help
+dotnet run -- bamboo --help
 ```
 
 ---
@@ -316,6 +338,110 @@ Options:
 
 ---
 
+## Bamboo Commands
+
+### List Projects
+
+```bash
+dotnet run -- bamboo get-projects
+```
+
+### Get a Project
+
+```bash
+dotnet run -- bamboo get-project --key PROJ
+```
+
+Options:
+- `-k, --key` (required): Project key (e.g., PROJ)
+
+### List Plans
+
+```bash
+dotnet run -- bamboo get-plans
+```
+
+Filter by project:
+```bash
+dotnet run -- bamboo get-plans --project PROJ
+```
+
+Options:
+- `-p, --project`: Filter plans by project key (optional)
+
+### Get a Plan (with configuration)
+
+```bash
+dotnet run -- bamboo get-plan --key PROJ-PLAN
+```
+
+Options:
+- `-k, --key` (required): Plan key (e.g., PROJ-PLAN)
+
+This shows plan details including stages, variables, and branches.
+
+### List Plan Branches
+
+```bash
+dotnet run -- bamboo get-branches --key PROJ-PLAN
+```
+
+Options:
+- `-k, --key` (required): Plan key
+
+### List Build Results
+
+```bash
+dotnet run -- bamboo get-builds --key PROJ-PLAN
+```
+
+With limited results:
+```bash
+dotnet run -- bamboo get-builds --key PROJ-PLAN --max-results 10
+```
+
+Options:
+- `-k, --key` (required): Plan key
+- `-n, --max-results`: Maximum number of results (default: 25)
+
+### Get a Specific Build Result
+
+```bash
+dotnet run -- bamboo get-build --key PROJ-PLAN-123
+```
+
+Options:
+- `-k, --key` (required): Build result key (e.g., PROJ-PLAN-123)
+
+This shows detailed build information including stages, changes, and test results.
+
+### Get Latest Build Result
+
+```bash
+dotnet run -- bamboo get-latest-build --key PROJ-PLAN
+```
+
+Options:
+- `-k, --key` (required): Plan key
+
+### Queue a Build (Trigger Build)
+
+Queue a build for the default branch:
+```bash
+dotnet run -- bamboo queue-build --key PROJ-PLAN
+```
+
+Queue a build for a specific branch:
+```bash
+dotnet run -- bamboo queue-build --key PROJ-PLAN --branch feature/my-branch
+```
+
+Options:
+- `-k, --key` (required): Plan key
+- `-b, --branch`: Branch name (optional, builds default branch if not specified)
+
+---
+
 ## Project Structure
 
 ```
@@ -323,10 +449,12 @@ AtlassianCli/
 ├── Program.cs                    # Entry point, CLI parsing
 ├── Client/
 │   ├── ConfluenceClient.cs       # Confluence REST API client
-│   └── JiraClient.cs             # Jira REST API client
+│   ├── JiraClient.cs             # Jira REST API client
+│   └── BambooClient.cs           # Bamboo REST API client
 ├── Models/
 │   ├── ConfluenceModels.cs       # Confluence data transfer objects
-│   └── JiraModels.cs             # Jira data transfer objects
+│   ├── JiraModels.cs             # Jira data transfer objects
+│   └── BambooModels.cs           # Bamboo data transfer objects
 ├── Commands/
 │   ├── CommandOptions.cs         # CLI option definitions
 │   └── CommandHandlers.cs        # Command execution logic

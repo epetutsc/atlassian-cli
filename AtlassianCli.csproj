@@ -17,8 +17,8 @@
     <PackageId>AtlassianCli</PackageId>
     <Version>1.0.0</Version>
     <Authors>epetutsc</Authors>
-    <Description>A command-line interface for Confluence and Jira REST APIs</Description>
-    <PackageTags>confluence;jira;atlassian;cli;tool</PackageTags>
+    <Description>A command-line interface for Confluence, Jira, and Bamboo REST APIs</Description>
+    <PackageTags>confluence;jira;bamboo;atlassian;cli;tool</PackageTags>
     <PackageProjectUrl>https://github.com/epetutsc/confluence-cli</PackageProjectUrl>
     <RepositoryUrl>https://github.com/epetutsc/confluence-cli</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
