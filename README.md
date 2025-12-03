@@ -448,14 +448,24 @@ Get the logs from a build:
 dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123
 ```
 
-Filter logs to find errors:
+Filter logs using regex pattern:
 ```bash
-dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123 --filter error
+dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123 -f error
 ```
 
-Filter logs to find exceptions:
+Use multiple filters (lines matching ANY pattern are shown):
 ```bash
-dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123 --filter exception
+dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123 -f error -f exception
+```
+
+Use regex OR pattern:
+```bash
+dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123 -f 'error|exception'
+```
+
+Use regex to find complex patterns:
+```bash
+dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123 -f 'failed.*test'
 ```
 
 Get logs for a specific job within the build:
@@ -465,7 +475,7 @@ dotnet run -- bamboo get-build-logs --key PROJ-PLAN-123 --job PROJ-PLAN-JOB1
 
 Options:
 - `-k, --key` (required): Build result key (e.g., PROJ-PLAN-123)
-- `-f, --filter`: Filter log lines containing this text (case-insensitive)
+- `-f, --filter`: Filter log lines using regex patterns (case-insensitive). Can be specified multiple times.
 - `-j, --job`: Get logs for a specific job within the build
 
 ---

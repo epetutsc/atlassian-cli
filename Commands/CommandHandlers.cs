@@ -1,6 +1,7 @@
 using AtlassianCli.Client;
 using AtlassianCli.Models;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace AtlassianCli.Commands;
 
@@ -800,21 +801,37 @@ public static class CommandHandlers
 
             Console.WriteLine();
 
-            // Apply filter if specified
-            if (!string.IsNullOrEmpty(options.Filter))
+            // Apply filters if specified
+            var filters = options.Filters.Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
+            if (filters.Count > 0)
             {
+                // Compile regex patterns with case-insensitive matching
+                List<Regex> regexPatterns;
+                try
+                {
+                    regexPatterns = filters
+                        .Select(f => new Regex(f, RegexOptions.IgnoreCase | RegexOptions.Compiled))
+                        .ToList();
+                }
+                catch (ArgumentException ex)
+                {
+                    await Console.Error.WriteLineAsync($"Error: Invalid regex pattern - {ex.Message}");
+                    return 1;
+                }
+
                 var filteredLines = logs
                     .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Where(line => line.Contains(options.Filter, StringComparison.OrdinalIgnoreCase))
+                    .Where(line => regexPatterns.Any(regex => regex.IsMatch(line)))
                     .ToList();
 
+                var filterDescription = string.Join(", ", filters.Select(f => $"'{f}'"));
                 if (filteredLines.Count == 0)
                 {
-                    Console.WriteLine($"No log lines found matching filter: '{options.Filter}'");
+                    Console.WriteLine($"No log lines found matching filter(s): {filterDescription}");
                 }
                 else
                 {
-                    Console.WriteLine($"=== Log Lines Matching '{options.Filter}' ({filteredLines.Count} matches) ===");
+                    Console.WriteLine($"=== Log Lines Matching {filterDescription} ({filteredLines.Count} matches) ===");
                     foreach (var line in filteredLines)
                     {
                         Console.WriteLine(line);
