@@ -18,6 +18,11 @@ public sealed class BambooClient : IDisposable
     private readonly JsonSerializerOptions _jsonOptions;
 
     /// <summary>
+    /// Maximum number of log entries to retrieve when fetching build logs.
+    /// </summary>
+    private const int MaxLogEntries = 10000;
+
+    /// <summary>
     /// Creates a new BambooClient instance using environment variables for configuration.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when required environment variables are missing.</exception>
@@ -223,7 +228,7 @@ public sealed class BambooClient : IDisposable
     public async Task<string> GetBuildLogsAsync(string buildResultKey)
     {
         // Bamboo returns logs as plain text at this endpoint
-        var url = $"{_baseUrl}/rest/api/latest/result/{buildResultKey}?expand=logEntries&max-results=10000";
+        var url = $"{_baseUrl}/rest/api/latest/result/{buildResultKey}?expand=logEntries&max-results={MaxLogEntries}";
         var response = await _httpClient.GetAsync(url);
 
         await EnsureSuccessAsync(response, $"getting build logs for {buildResultKey}");
@@ -253,6 +258,7 @@ public sealed class BambooClient : IDisposable
         // If download endpoint doesn't work, try the browse endpoint
         if (!response.IsSuccessStatusCode)
         {
+            response.Dispose();
             url = $"{_baseUrl}/browse/{buildResultKey}/log";
             response = await _httpClient.GetAsync(url);
         }
