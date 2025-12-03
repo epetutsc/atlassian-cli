@@ -363,6 +363,47 @@ public class BambooBuildResult
 
     [JsonPropertyName("skippedTestCount")]
     public int SkippedTestCount { get; set; }
+
+    [JsonPropertyName("logEntries")]
+    public BambooLogEntriesList? LogEntries { get; set; }
+}
+
+// ==================== Log Entry Models ====================
+
+/// <summary>
+/// Container for Bamboo log entries list.
+/// </summary>
+public class BambooLogEntriesList
+{
+    [JsonPropertyName("size")]
+    public int Size { get; set; }
+
+    [JsonPropertyName("start-index")]
+    public int StartIndex { get; set; }
+
+    [JsonPropertyName("max-result")]
+    public int MaxResult { get; set; }
+
+    [JsonPropertyName("logEntry")]
+    public List<BambooLogEntry> LogEntry { get; set; } = new();
+}
+
+/// <summary>
+/// Represents a Bamboo log entry.
+/// </summary>
+public class BambooLogEntry
+{
+    [JsonPropertyName("log")]
+    public string? Log { get; set; }
+
+    [JsonPropertyName("date")]
+    public string? Date { get; set; }
+
+    [JsonPropertyName("unstyledLog")]
+    public string? UnstyledLog { get; set; }
+
+    [JsonPropertyName("formattedDate")]
+    public string? FormattedDate { get; set; }
 }
 
 // ==================== Stage Result Models ====================

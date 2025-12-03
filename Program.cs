@@ -163,7 +163,8 @@ public static class Program
         var parserResult = parser.ParseArguments<
             GetBambooProjectsOptions, GetBambooProjectOptions, GetBambooPlansOptions,
             GetBambooPlanOptions, GetBambooBranchesOptions, GetBambooBuildsOptions,
-            GetBambooBuildOptions, GetBambooLatestBuildOptions, QueueBambooBuildOptions>(args);
+            GetBambooBuildOptions, GetBambooLatestBuildOptions, QueueBambooBuildOptions,
+            GetBambooBuildLogsOptions>(args);
 
         return await parserResult.MapResult(
             async (GetBambooProjectsOptions opts) => await CommandHandlers.HandleGetBambooProjectsAsync(opts),
@@ -175,6 +176,7 @@ public static class Program
             async (GetBambooBuildOptions opts) => await CommandHandlers.HandleGetBambooBuildAsync(opts),
             async (GetBambooLatestBuildOptions opts) => await CommandHandlers.HandleGetBambooLatestBuildAsync(opts),
             async (QueueBambooBuildOptions opts) => await CommandHandlers.HandleQueueBambooBuildAsync(opts),
+            async (GetBambooBuildLogsOptions opts) => await CommandHandlers.HandleGetBambooBuildLogsAsync(opts),
             async errs => await HandleBambooParseErrorsAsync(parserResult, errs)
         );
     }
@@ -319,6 +321,7 @@ public static class Program
         Console.WriteLine("  get-builds         List build results for a plan");
         Console.WriteLine("  get-build          Retrieve a specific build result");
         Console.WriteLine("  get-latest-build   Retrieve the latest build result for a plan");
+        Console.WriteLine("  get-build-logs     Retrieve build logs (with optional filter)");
         Console.WriteLine("  queue-build        Queue a new build for a plan (trigger build)");
         Console.WriteLine();
         Console.WriteLine("Examples:");
@@ -330,6 +333,10 @@ public static class Program
         Console.WriteLine("  atlassiancli bamboo get-builds --key PROJ-PLAN --max-results 10");
         Console.WriteLine("  atlassiancli bamboo get-build --key PROJ-PLAN-123");
         Console.WriteLine("  atlassiancli bamboo get-latest-build --key PROJ-PLAN");
+        Console.WriteLine("  atlassiancli bamboo get-build-logs --key PROJ-PLAN-123");
+        Console.WriteLine("  atlassiancli bamboo get-build-logs --key PROJ-PLAN-123 -f error -f exception");
+        Console.WriteLine("  atlassiancli bamboo get-build-logs --key PROJ-PLAN-123 -f 'error|exception'");
+        Console.WriteLine("  atlassiancli bamboo get-build-logs --key PROJ-PLAN-123 -f 'failed.*test'");
         Console.WriteLine("  atlassiancli bamboo queue-build --key PROJ-PLAN");
         Console.WriteLine("  atlassiancli bamboo queue-build --key PROJ-PLAN --branch feature/my-branch");
         Console.WriteLine();
@@ -436,12 +443,15 @@ public static class Program
             h.AddPreOptionsLine("  get-builds         List build results for a plan");
             h.AddPreOptionsLine("  get-build          Retrieve a specific build result");
             h.AddPreOptionsLine("  get-latest-build   Retrieve the latest build for a plan");
+            h.AddPreOptionsLine("  get-build-logs     Retrieve build logs (with optional regex filters)");
             h.AddPreOptionsLine("  queue-build        Queue a new build for a plan");
             h.AddPreOptionsLine("");
             h.AddPreOptionsLine("Examples:");
             h.AddPreOptionsLine("  atlassiancli bamboo get-projects");
             h.AddPreOptionsLine("  atlassiancli bamboo get-plan --key PROJ-PLAN");
             h.AddPreOptionsLine("  atlassiancli bamboo get-builds --key PROJ-PLAN");
+            h.AddPreOptionsLine("  atlassiancli bamboo get-build-logs --key PROJ-PLAN-123 -f error -f exception");
+            h.AddPreOptionsLine("  atlassiancli bamboo get-build-logs --key PROJ-PLAN-123 -f 'error|exception'");
             h.AddPreOptionsLine("  atlassiancli bamboo queue-build --key PROJ-PLAN");
             return h;
         }, e => e);

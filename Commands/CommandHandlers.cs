@@ -1,6 +1,7 @@
 using AtlassianCli.Client;
 using AtlassianCli.Models;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace AtlassianCli.Commands;
 
@@ -766,6 +767,81 @@ public static class CommandHandlers
             if (response.Link != null)
             {
                 Console.WriteLine($"  URL:          {response.Link.Href}");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error: {ex.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Handles the get-build-logs command for Bamboo.
+    /// </summary>
+    public static async Task<int> HandleGetBambooBuildLogsAsync(GetBambooBuildLogsOptions options)
+    {
+        try
+        {
+            using var client = new BambooClient();
+
+            string logs;
+            if (!string.IsNullOrEmpty(options.JobKey))
+            {
+                Console.WriteLine($"Fetching job logs for '{options.JobKey}' in build '{options.BuildKey}'...");
+                logs = await client.GetJobLogsAsync(options.BuildKey, options.JobKey);
+            }
+            else
+            {
+                Console.WriteLine($"Fetching build logs for '{options.BuildKey}'...");
+                logs = await client.GetBuildLogsAsync(options.BuildKey);
+            }
+
+            Console.WriteLine();
+
+            // Apply filters if specified
+            var filters = options.Filters.Where(f => !string.IsNullOrWhiteSpace(f)).ToList();
+            if (filters.Count > 0)
+            {
+                // Compile regex patterns with case-insensitive matching
+                List<Regex> regexPatterns;
+                try
+                {
+                    regexPatterns = filters
+                        .Select(f => new Regex(f, RegexOptions.IgnoreCase | RegexOptions.Compiled))
+                        .ToList();
+                }
+                catch (ArgumentException ex)
+                {
+                    await Console.Error.WriteLineAsync($"Error: Invalid regex pattern - {ex.Message}");
+                    return 1;
+                }
+
+                var filteredLines = logs
+                    .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Where(line => regexPatterns.Any(regex => regex.IsMatch(line)))
+                    .ToList();
+
+                var filterDescription = string.Join(", ", filters.Select(f => $"'{f}'"));
+                if (filteredLines.Count == 0)
+                {
+                    Console.WriteLine($"No log lines found matching filter(s): {filterDescription}");
+                }
+                else
+                {
+                    Console.WriteLine($"=== Log Lines Matching {filterDescription} ({filteredLines.Count} matches) ===");
+                    foreach (var line in filteredLines)
+                    {
+                        Console.WriteLine(line);
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("=== Build Logs ===");
+                Console.WriteLine(logs);
             }
 
             return 0;

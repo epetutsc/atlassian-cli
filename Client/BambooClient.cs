@@ -18,6 +18,11 @@ public sealed class BambooClient : IDisposable
     private readonly JsonSerializerOptions _jsonOptions;
 
     /// <summary>
+    /// Maximum number of log entries to retrieve when fetching build logs.
+    /// </summary>
+    private const int MaxLogEntries = 10000;
+
+    /// <summary>
     /// Creates a new BambooClient instance using environment variables for configuration.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when required environment variables are missing.</exception>
@@ -211,6 +216,73 @@ public sealed class BambooClient : IDisposable
 
         var result = await response.Content.ReadFromJsonAsync<BambooBuildResult>(_jsonOptions);
         return result ?? throw new InvalidOperationException($"Failed to deserialize latest build result for {planKey}");
+    }
+
+    // ==================== Build Log Operations ====================
+
+    /// <summary>
+    /// Gets the build log for a specific build result.
+    /// </summary>
+    /// <param name="buildResultKey">The build result key (e.g., PROJ-PLAN-123).</param>
+    /// <returns>The build log as a string.</returns>
+    public async Task<string> GetBuildLogsAsync(string buildResultKey)
+    {
+        // Bamboo returns logs as plain text at this endpoint
+        var url = $"{_baseUrl}/rest/api/latest/result/{buildResultKey}?expand=logEntries&max-results={MaxLogEntries}";
+        var response = await _httpClient.GetAsync(url);
+
+        await EnsureSuccessAsync(response, $"getting build logs for {buildResultKey}");
+
+        // Try to get logEntries from JSON response first
+        var result = await response.Content.ReadFromJsonAsync<BambooBuildResult>(_jsonOptions);
+        
+        if (result?.LogEntries?.LogEntry != null && result.LogEntries.LogEntry.Count > 0)
+        {
+            return string.Join(Environment.NewLine, result.LogEntries.LogEntry.Select(e => e.Log ?? string.Empty));
+        }
+
+        // Fallback: try to get raw log from the download endpoint
+        return await GetBuildLogDownloadAsync(buildResultKey);
+    }
+
+    /// <summary>
+    /// Downloads the raw build log file for a specific build result.
+    /// </summary>
+    /// <param name="buildResultKey">The build result key (e.g., PROJ-PLAN-123).</param>
+    /// <returns>The build log as a string.</returns>
+    public async Task<string> GetBuildLogDownloadAsync(string buildResultKey)
+    {
+        var url = $"{_baseUrl}/download/{buildResultKey}/build_logs/{buildResultKey}.log";
+        var response = await _httpClient.GetAsync(url);
+
+        // If download endpoint doesn't work, try the browse endpoint
+        if (!response.IsSuccessStatusCode)
+        {
+            response.Dispose();
+            url = $"{_baseUrl}/browse/{buildResultKey}/log";
+            response = await _httpClient.GetAsync(url);
+        }
+
+        await EnsureSuccessAsync(response, $"downloading build logs for {buildResultKey}");
+
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    /// <summary>
+    /// Gets the job log for a specific job within a build.
+    /// </summary>
+    /// <param name="buildResultKey">The build result key (e.g., PROJ-PLAN-123).</param>
+    /// <param name="jobKey">The job key (e.g., PROJ-PLAN-JOB1).</param>
+    /// <returns>The job log as a string.</returns>
+    public async Task<string> GetJobLogsAsync(string buildResultKey, string jobKey)
+    {
+        // Job logs are available at a different endpoint
+        var url = $"{_baseUrl}/download/{buildResultKey}/build_logs/{jobKey}.log";
+        var response = await _httpClient.GetAsync(url);
+
+        await EnsureSuccessAsync(response, $"getting job logs for {jobKey} in build {buildResultKey}");
+
+        return await response.Content.ReadAsStringAsync();
     }
 
     // ==================== Queue Operations ====================
