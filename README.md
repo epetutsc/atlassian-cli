@@ -1,6 +1,6 @@
 # Atlassian CLI
 
-A .NET tool that provides a command-line interface to interact with self-hosted Confluence, Jira, and Bamboo (on-prem) instances via their REST APIs.
+A .NET tool that provides a command-line interface to interact with self-hosted Confluence, Jira, Bamboo, and BitBucket (on-prem) instances via their REST APIs.
 
 ## Installation
 
@@ -59,15 +59,22 @@ dotnet tool uninstall --global AtlassianCli
 - **Get build logs** with optional text filtering (e.g., filter for 'error' or 'exception')
 - **Trigger builds** (queue builds for plans and branches)
 
+### BitBucket
+- **Get pull request information** including title, description, state, and reviewers
+- **View pull request diffs** with file changes
+- **List pull request commits** with author and message details
+- **Read pull request comments** and review discussions
+- **Add review comments** to pull requests
+
 ### General
 - Environment variable-based configuration
 - Comprehensive help system
-- Hierarchical sub-commands (confluence/jira/bamboo)
+- Hierarchical sub-commands (confluence/jira/bamboo/bitbucket)
 
 ## Requirements
 
 - .NET 10.0 SDK or later
-- Access to a Confluence, Jira, and/or Bamboo instance with REST API enabled
+- Access to a Confluence, Jira, Bamboo, and/or BitBucket instance with REST API enabled
 
 ## Configuration
 
@@ -115,6 +122,15 @@ The CLI supports three authentication methods (in order of preference):
 | `BAMBOO_USERNAME` | Conditional | Username for Basic auth (required with API token for Cloud, or with password) |
 | `BAMBOO_PASSWORD` | Conditional | Password for Basic auth (use with username) |
 
+### BitBucket Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `BITBUCKET_BASE_URL` | Yes | Base URL of your BitBucket instance (e.g., `https://bitbucket.example.com`) |
+| `BITBUCKET_API_TOKEN` | Conditional | Personal Access Token for Bearer auth (use alone), or API token (use with username) |
+| `BITBUCKET_USERNAME` | Conditional | Username for Basic auth (required with API token for Cloud, or with password) |
+| `BITBUCKET_PASSWORD` | Conditional | Password for Basic auth (use with username) |
+
 ### Example Configurations
 
 #### Bearer Token (Personal Access Token) - On-Premises
@@ -145,6 +161,10 @@ export JIRA_API_TOKEN=your-api-token
 # Bamboo with PAT
 export BAMBOO_BASE_URL=https://bamboo.example.com
 export BAMBOO_API_TOKEN=your-personal-access-token
+
+# BitBucket with PAT
+export BITBUCKET_BASE_URL=https://bitbucket.example.com
+export BITBUCKET_API_TOKEN=your-personal-access-token
 ```
 
 ## Building
@@ -155,7 +175,7 @@ dotnet build
 
 ## Usage
 
-The CLI uses a hierarchical command structure where you first specify the service (`confluence`, `jira`, or `bamboo`) followed by the specific command.
+The CLI uses a hierarchical command structure where you first specify the service (`confluence`, `jira`, `bamboo`, or `bitbucket`) followed by the specific command.
 
 ### Show Help
 
@@ -164,6 +184,7 @@ dotnet run -- --help
 dotnet run -- confluence --help
 dotnet run -- jira --help
 dotnet run -- bamboo --help
+dotnet run -- bitbucket --help
 ```
 
 ---
@@ -480,6 +501,87 @@ Options:
 
 ---
 
+## BitBucket Commands
+
+### Get Pull Request
+
+Get detailed information about a pull request:
+```bash
+dotnet run -- bitbucket get-pr --project PROJ --repo my-repo --id 123
+```
+
+Short form:
+```bash
+dotnet run -- bitbucket get-pr -p PROJ -r my-repo -i 123
+```
+
+Options:
+- `-p, --project` (required): Project key (e.g., PROJ)
+- `-r, --repo` (required): Repository slug (e.g., my-repo)
+- `-i, --id` (required): Pull request ID
+
+### Get Pull Request Diff
+
+Get the diff for a pull request showing all file changes:
+```bash
+dotnet run -- bitbucket get-pr-diff --project PROJ --repo my-repo --id 123
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+- `-i, --id` (required): Pull request ID
+
+### Get Pull Request Commits
+
+List all commits in a pull request:
+```bash
+dotnet run -- bitbucket get-pr-commits --project PROJ --repo my-repo --id 123
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+- `-i, --id` (required): Pull request ID
+
+### Get Pull Request Comments
+
+List all comments and review discussions on a pull request:
+```bash
+dotnet run -- bitbucket get-pr-comments --project PROJ --repo my-repo --id 123
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+- `-i, --id` (required): Pull request ID
+
+### Add Pull Request Comment
+
+Add a review comment to a pull request:
+```bash
+dotnet run -- bitbucket add-pr-comment --project PROJ --repo my-repo --id 123 --text "This looks good!"
+```
+
+With file:
+```bash
+dotnet run -- bitbucket add-pr-comment --project PROJ --repo my-repo --id 123 --file review-comment.txt
+```
+
+Short form:
+```bash
+dotnet run -- bitbucket add-pr-comment -p PROJ -r my-repo -i 123 -t "LGTM"
+```
+
+Options:
+- `-p, --project` (required): Project key
+- `-r, --repo` (required): Repository slug
+- `-i, --id` (required): Pull request ID
+- `-t, --text`: Comment text (either --text or --file is required)
+- `--file`: Path to a UTF-8 encoded file containing the comment text
+
+---
+
 ## Project Structure
 
 ```
@@ -488,11 +590,13 @@ AtlassianCli/
 ├── Client/
 │   ├── ConfluenceClient.cs       # Confluence REST API client
 │   ├── JiraClient.cs             # Jira REST API client
-│   └── BambooClient.cs           # Bamboo REST API client
+│   ├── BambooClient.cs           # Bamboo REST API client
+│   └── BitBucketClient.cs        # BitBucket REST API client
 ├── Models/
 │   ├── ConfluenceModels.cs       # Confluence data transfer objects
 │   ├── JiraModels.cs             # Jira data transfer objects
-│   └── BambooModels.cs           # Bamboo data transfer objects
+│   ├── BambooModels.cs           # Bamboo data transfer objects
+│   └── BitBucket*.cs             # BitBucket data transfer objects
 ├── Commands/
 │   ├── CommandOptions.cs         # CLI option definitions
 │   └── CommandHandlers.cs        # Command execution logic
