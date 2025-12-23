@@ -5,7 +5,7 @@ using AtlassianCli.Commands;
 namespace AtlassianCli;
 
 /// <summary>
-/// Atlassian CLI - A command-line interface for interacting with Confluence, Jira, and Bamboo REST APIs.
+/// Atlassian CLI - A command-line interface for interacting with Confluence, Jira, Bamboo, and BitBucket REST APIs.
 /// 
 /// Environment Variables Required:
 ///   For Confluence:
@@ -25,6 +25,12 @@ namespace AtlassianCli;
 ///     BAMBOO_USERNAME         - Username for authentication  
 ///     BAMBOO_API_TOKEN        - API token (preferred) OR
 ///     BAMBOO_PASSWORD         - Password (if not using API token)
+///
+///   For BitBucket:
+///     BITBUCKET_BASE_URL      - Base URL of your BitBucket instance (e.g., https://bitbucket.example.com)
+///     BITBUCKET_USERNAME      - Username for authentication  
+///     BITBUCKET_API_TOKEN     - API token (preferred) OR
+///     BITBUCKET_PASSWORD      - Password (if not using API token)
 /// 
 /// Confluence Usage Examples:
 ///   atlassiancli confluence create-page --space KEY --title "My Title" --body "&lt;p&gt;Hello&lt;/p&gt;"
@@ -48,6 +54,12 @@ namespace AtlassianCli;
 ///   atlassiancli bamboo get-builds --key PROJ-PLAN
 ///   atlassiancli bamboo get-build --key PROJ-PLAN-123
 ///   atlassiancli bamboo queue-build --key PROJ-PLAN
+///
+/// BitBucket Usage Examples:
+///   atlassiancli bitbucket get-pr --project PROJ --repo my-repo --id 123
+///   atlassiancli bitbucket get-pr-diff --project PROJ --repo my-repo --id 123
+///   atlassiancli bitbucket get-pr-commits --project PROJ --repo my-repo --id 123
+///   atlassiancli bitbucket add-pr-comment --project PROJ --repo my-repo --id 123 --text "Review comment"
 /// </summary>
 public static class Program
 {
@@ -85,6 +97,7 @@ public static class Program
             "confluence" => await HandleConfluenceAsync(subArgs, parser),
             "jira" => await HandleJiraAsync(subArgs, parser),
             "bamboo" => await HandleBambooAsync(subArgs, parser),
+            "bitbucket" => await HandleBitBucketAsync(subArgs, parser),
             _ => HandleUnknownSubCommand(args[0])
         };
     }
@@ -96,7 +109,7 @@ public static class Program
     {
         Console.Error.WriteLine($"Error: Unknown sub-command '{command}'.");
         Console.Error.WriteLine();
-        Console.Error.WriteLine("Available sub-commands: confluence, jira, bamboo");
+        Console.Error.WriteLine("Available sub-commands: confluence, jira, bamboo, bitbucket");
         Console.Error.WriteLine();
         Console.Error.WriteLine("Use 'atlassiancli --help' for more information.");
         return 1;
@@ -182,18 +195,44 @@ public static class Program
     }
 
     /// <summary>
+    /// Handles BitBucket sub-commands.
+    /// </summary>
+    private static async Task<int> HandleBitBucketAsync(string[] args, Parser parser)
+    {
+        if (args.Length == 0)
+        {
+            ShowBitBucketHelp();
+            return 0;
+        }
+
+        var parserResult = parser.ParseArguments<
+            GetPullRequestOptions, GetPullRequestDiffOptions, GetPullRequestCommitsOptions,
+            GetPullRequestCommentsOptions, AddPullRequestCommentOptions>(args);
+
+        return await parserResult.MapResult(
+            async (GetPullRequestOptions opts) => await BitBucketCommandHandlers.HandleGetPullRequestAsync(opts),
+            async (GetPullRequestDiffOptions opts) => await BitBucketCommandHandlers.HandleGetPullRequestDiffAsync(opts),
+            async (GetPullRequestCommitsOptions opts) => await BitBucketCommandHandlers.HandleGetPullRequestCommitsAsync(opts),
+            async (GetPullRequestCommentsOptions opts) => await BitBucketCommandHandlers.HandleGetPullRequestCommentsAsync(opts),
+            async (AddPullRequestCommentOptions opts) => await BitBucketCommandHandlers.HandleAddPullRequestCommentAsync(opts),
+            async errs => await HandleBitBucketParseErrorsAsync(parserResult, errs)
+        );
+    }
+
+    /// <summary>
     /// Displays the welcome message with CLI information.
     /// </summary>
     private static void ShowWelcome()
     {
-        Console.WriteLine("Atlassian CLI - Command-line interface for Confluence, Jira, and Bamboo REST APIs");
+        Console.WriteLine("Atlassian CLI - Command-line interface for Confluence, Jira, Bamboo, and BitBucket REST APIs");
         Console.WriteLine();
-        Console.WriteLine("Usage: atlassiancli <confluence|jira|bamboo> <command> [options]");
+        Console.WriteLine("Usage: atlassiancli <confluence|jira|bamboo|bitbucket> <command> [options]");
         Console.WriteLine();
         Console.WriteLine("Sub-commands:");
         Console.WriteLine("  confluence    Confluence commands for managing pages");
         Console.WriteLine("  jira          Jira commands for managing issues");
         Console.WriteLine("  bamboo        Bamboo commands for viewing builds and triggering plans");
+        Console.WriteLine("  bitbucket     BitBucket commands for reviewing pull requests");
         Console.WriteLine();
         Console.WriteLine("Confluence Environment Variables:");
         Console.WriteLine("  CONFLUENCE_BASE_URL     Base URL of your Confluence instance");
@@ -224,6 +263,16 @@ public static class Program
         Console.WriteLine("  BAMBOO_API_TOKEN        API token (preferred for security)");
         Console.WriteLine("                          OR");
         Console.WriteLine("  BAMBOO_PASSWORD         Password (if not using API token)");
+        Console.WriteLine();
+        Console.WriteLine("BitBucket Environment Variables:");
+        Console.WriteLine("  BITBUCKET_BASE_URL      Base URL of your BitBucket instance");
+        Console.WriteLine("                          Example: https://bitbucket.example.com");
+        Console.WriteLine();
+        Console.WriteLine("  BITBUCKET_USERNAME      Username for authentication");
+        Console.WriteLine();
+        Console.WriteLine("  BITBUCKET_API_TOKEN     API token (preferred for security)");
+        Console.WriteLine("                          OR");
+        Console.WriteLine("  BITBUCKET_PASSWORD      Password (if not using API token)");
     }
 
     /// <summary>
@@ -248,7 +297,13 @@ public static class Program
         Console.WriteLine("  atlassiancli bamboo get-builds --key PROJ-PLAN");
         Console.WriteLine("  atlassiancli bamboo queue-build --key PROJ-PLAN");
         Console.WriteLine();
-        Console.WriteLine("Use 'atlassiancli <confluence|jira|bamboo>' for more information about a sub-command.");
+        Console.WriteLine("BitBucket Examples:");
+        Console.WriteLine("  atlassiancli bitbucket get-pr --project PROJ --repo my-repo --id 123");
+        Console.WriteLine("  atlassiancli bitbucket get-pr-diff --project PROJ --repo my-repo --id 123");
+        Console.WriteLine("  atlassiancli bitbucket get-pr-commits --project PROJ --repo my-repo --id 123");
+        Console.WriteLine("  atlassiancli bitbucket add-pr-comment --project PROJ --repo my-repo --id 123 --text \"Review comment\"");
+        Console.WriteLine();
+        Console.WriteLine("Use 'atlassiancli <confluence|jira|bamboo|bitbucket>' for more information about a sub-command.");
     }
 
     /// <summary>
@@ -341,6 +396,33 @@ public static class Program
         Console.WriteLine("  atlassiancli bamboo queue-build --key PROJ-PLAN --branch feature/my-branch");
         Console.WriteLine();
         Console.WriteLine("Use 'atlassiancli bamboo <command> --help' for more information about a command.");
+    }
+
+    /// <summary>
+    /// Displays help for BitBucket sub-commands.
+    /// </summary>
+    private static void ShowBitBucketHelp()
+    {
+        Console.WriteLine("Atlassian CLI - BitBucket Commands");
+        Console.WriteLine();
+        Console.WriteLine("Usage: atlassiancli bitbucket <command> [options]");
+        Console.WriteLine();
+        Console.WriteLine("Commands:");
+        Console.WriteLine("  get-pr            Get pull request information");
+        Console.WriteLine("  get-pr-diff       Get pull request diff");
+        Console.WriteLine("  get-pr-commits    Get pull request commits");
+        Console.WriteLine("  get-pr-comments   Get pull request comments");
+        Console.WriteLine("  add-pr-comment    Add a comment to a pull request");
+        Console.WriteLine();
+        Console.WriteLine("Examples:");
+        Console.WriteLine("  atlassiancli bitbucket get-pr --project PROJ --repo my-repo --id 123");
+        Console.WriteLine("  atlassiancli bitbucket get-pr-diff --project PROJ --repo my-repo --id 123");
+        Console.WriteLine("  atlassiancli bitbucket get-pr-commits --project PROJ --repo my-repo --id 123");
+        Console.WriteLine("  atlassiancli bitbucket get-pr-comments --project PROJ --repo my-repo --id 123");
+        Console.WriteLine("  atlassiancli bitbucket add-pr-comment --project PROJ --repo my-repo --id 123 --text \"Review comment\"");
+        Console.WriteLine("  atlassiancli bitbucket add-pr-comment --project PROJ --repo my-repo --id 123 --file comment.txt");
+        Console.WriteLine();
+        Console.WriteLine("Use 'atlassiancli bitbucket <command> --help' for more information about a command.");
     }
 
     /// <summary>
@@ -453,6 +535,43 @@ public static class Program
             h.AddPreOptionsLine("  atlassiancli bamboo get-build-logs --key PROJ-PLAN-123 -f error -f exception");
             h.AddPreOptionsLine("  atlassiancli bamboo get-build-logs --key PROJ-PLAN-123 -f 'error|exception'");
             h.AddPreOptionsLine("  atlassiancli bamboo queue-build --key PROJ-PLAN");
+            return h;
+        }, e => e);
+
+        Console.WriteLine(helpText);
+
+        if (errors.IsHelp() || errors.IsVersion())
+        {
+            return Task.FromResult(0);
+        }
+
+        return Task.FromResult(1);
+    }
+
+    /// <summary>
+    /// Handles parsing errors for BitBucket sub-commands.
+    /// </summary>
+    private static Task<int> HandleBitBucketParseErrorsAsync<T>(ParserResult<T> result, IEnumerable<Error> errors)
+    {
+        var helpText = HelpText.AutoBuild(result, h =>
+        {
+            h.AdditionalNewLineAfterOption = false;
+            h.Heading = "Atlassian CLI v1.0.0 - BitBucket";
+            h.Copyright = "Commands for reviewing pull requests";
+            h.AddPreOptionsLine("");
+            h.AddPreOptionsLine("Usage: atlassiancli bitbucket <command> [options]");
+            h.AddPreOptionsLine("");
+            h.AddPreOptionsLine("Commands:");
+            h.AddPreOptionsLine("  get-pr            Get pull request information");
+            h.AddPreOptionsLine("  get-pr-diff       Get pull request diff");
+            h.AddPreOptionsLine("  get-pr-commits    Get pull request commits");
+            h.AddPreOptionsLine("  get-pr-comments   Get pull request comments");
+            h.AddPreOptionsLine("  add-pr-comment    Add a comment to a pull request");
+            h.AddPreOptionsLine("");
+            h.AddPreOptionsLine("Examples:");
+            h.AddPreOptionsLine("  atlassiancli bitbucket get-pr --project PROJ --repo my-repo --id 123");
+            h.AddPreOptionsLine("  atlassiancli bitbucket get-pr-diff --project PROJ --repo my-repo --id 123");
+            h.AddPreOptionsLine("  atlassiancli bitbucket add-pr-comment --project PROJ --repo my-repo --id 123 --text \"Review comment\"");
             return h;
         }, e => e);
 
