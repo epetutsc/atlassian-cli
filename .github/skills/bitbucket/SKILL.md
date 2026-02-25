@@ -1,6 +1,6 @@
 ---
 name: bitbucket
-description: Interact with Bitbucket Server / Data Center via its REST API. Use this skill when asked to get pull request details, diffs, commits, or comments, or to add a comment to a pull request.
+description: Interact with Bitbucket Server / Data Center via its REST API. Use this skill when asked to get or manage projects, repositories, branches, tags, commits, pull requests (create, review, merge, approve, comment), or webhooks.
 ---
 
 Use the Bitbucket REST API directly to perform Bitbucket operations. All configuration is provided through environment variables.
@@ -24,10 +24,136 @@ Choose the authentication method based on which variables are set:
 
 Always add `Accept: application/json` and, for write requests, `Content-Type: application/json`.
 
-## Operations
+Use `start` and `limit` query parameters for pagination. Continue fetching pages until `isLastPage` is `true`. The next page starts at `nextPageStart`.
 
-All pull request endpoints share the base path:
-`$BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/pull-requests/{pullRequestId}`
+## Projects
+
+### List all projects
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/projects?limit=100&start={start}
+```
+
+Returns projects under `values`, each with `key`, `name`, `description`, `public`, and `type`.
+
+### Get a specific project
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}
+```
+
+## Repositories
+
+### List repositories in a project
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos?limit=100&start={start}
+```
+
+Returns repositories under `values`, each with `slug`, `name`, `scmId`, `state`, and `links`.
+
+### Get a specific repository
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}
+```
+
+### List all repositories (across all projects)
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/repos?limit=100&start={start}
+```
+
+## Branches
+
+### List branches in a repository
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/branches?limit=100&start={start}
+```
+
+Optional filters: `?filterText={text}`, `?orderBy=ALPHABETICAL` (or `MODIFICATION`, `VERSION`).
+
+Returns branches under `values`, each with `id`, `displayId`, `latestCommit`, and `isDefault`.
+
+### Create a branch
+
+```
+POST $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/branches
+Content-Type: application/json
+
+{
+  "name": "<branchName>",
+  "startPoint": "<commitId or existingBranchName>"
+}
+```
+
+### Delete a branch
+
+```
+DELETE $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/branches
+Content-Type: application/json
+
+{
+  "name": "<refs/heads/branchName>",
+  "dryRun": false
+}
+```
+
+## Tags
+
+### List tags in a repository
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/tags?limit=100&start={start}
+```
+
+### Create a tag
+
+```
+POST $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/tags
+Content-Type: application/json
+
+{
+  "name": "<tagName>",
+  "startPoint": "<commitId>",
+  "message": "<optional tag message>"
+}
+```
+
+## Commits
+
+### List commits in a repository
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/commits?limit=100&start={start}
+```
+
+Optional filters: `?until={branchOrCommit}`, `?since={commitId}`, `?path={filePath}`.
+
+Returns commits under `values`, each with `id`, `displayId`, `author`, `authorTimestamp`, and `message`.
+
+### Get a specific commit
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/commits/{commitId}
+```
+
+### Get files changed in a commit
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/commits/{commitId}/changes
+```
+
+## Pull Requests
+
+### List pull requests
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/pull-requests?state=OPEN&limit=100&start={start}
+```
+
+State values: `OPEN`, `MERGED`, `DECLINED`, `ALL`.
 
 ### Get a pull request
 
@@ -36,6 +162,67 @@ GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug
 ```
 
 Returns full pull request details including `id`, `title`, `state`, `open`, `author`, `fromRef` (source branch), `toRef` (target branch), `reviewers`, `description`, and `links.self`.
+
+### Create a pull request
+
+```
+POST $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/pull-requests
+Content-Type: application/json
+
+{
+  "title": "<title>",
+  "description": "<description>",
+  "fromRef": {
+    "id": "refs/heads/<sourceBranch>",
+    "repository": {
+      "slug": "<repositorySlug>",
+      "project": { "key": "<projectKey>" }
+    }
+  },
+  "toRef": {
+    "id": "refs/heads/<targetBranch>",
+    "repository": {
+      "slug": "<repositorySlug>",
+      "project": { "key": "<projectKey>" }
+    }
+  },
+  "reviewers": [
+    { "user": { "name": "<username>" } }
+  ]
+}
+```
+
+### Approve a pull request
+
+```
+POST $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/pull-requests/{pullRequestId}/approve
+```
+
+### Remove approval from a pull request
+
+```
+DELETE $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/pull-requests/{pullRequestId}/approve
+```
+
+### Merge a pull request
+
+```
+POST $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/pull-requests/{pullRequestId}/merge
+Content-Type: application/json
+
+{ "version": <currentPrVersion> }
+```
+
+Retrieve `version` from the pull request's `version` field. Returns HTTP 200 with the merged pull request.
+
+### Decline a pull request
+
+```
+POST $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/pull-requests/{pullRequestId}/decline
+Content-Type: application/json
+
+{ "version": <currentPrVersion> }
+```
 
 ### Get the diff of a pull request
 
@@ -46,8 +233,6 @@ GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug
 Returns a structured diff with `fromHash`, `toHash`, and an array of file diffs (`diffs`). Each file diff contains `source`, `destination`, and an array of `hunks`, where each hunk lists `segments` of type `ADDED`, `REMOVED`, or `CONTEXT`.
 
 ### Get commits in a pull request
-
-Use pagination with `start` and `limit` query parameters (recommended limit: 100). Continue fetching pages until `isLastPage` is `true`.
 
 ```
 GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/pull-requests/{pullRequestId}/commits?start={start}&limit=100
@@ -76,7 +261,54 @@ Content-Type: application/json
 }
 ```
 
+To add an **inline comment** on a specific file/line, add an `anchor` object:
+
+```json
+{
+  "text": "<comment text>",
+  "anchor": {
+    "line": <lineNumber>,
+    "lineType": "CONTEXT",
+    "path": "<filePath>",
+    "srcPath": "<filePath>"
+  }
+}
+```
+
 Returns the created comment including its `id` and `createdDate` (Unix milliseconds).
+
+## Webhooks
+
+### List webhooks for a repository
+
+```
+GET $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/webhooks
+```
+
+### Create a webhook
+
+```
+POST $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/webhooks
+Content-Type: application/json
+
+{
+  "name": "<webhookName>",
+  "events": ["pr:opened", "pr:merged", "repo:refs_changed"],
+  "configuration": {
+    "secret": "<optionalHmacSecret>"
+  },
+  "url": "<callbackUrl>",
+  "active": true
+}
+```
+
+Common event types: `repo:refs_changed` (push), `pr:opened`, `pr:modified`, `pr:merged`, `pr:declined`, `pr:comment:added`.
+
+### Delete a webhook
+
+```
+DELETE $BITBUCKET_BASE_URL/rest/api/1.0/projects/{projectKey}/repos/{repositorySlug}/webhooks/{webhookId}
+```
 
 ## Error handling
 

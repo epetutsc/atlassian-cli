@@ -1,6 +1,6 @@
 ---
 name: bamboo
-description: Interact with Bamboo via its REST API. Use this skill when asked to list or inspect Bamboo projects, plans, branches, or build results, to trigger (queue) a build, or to retrieve build logs.
+description: Interact with Bamboo via its REST API. Use this skill when asked to list or inspect Bamboo projects, plans, branches, build results, deployment projects, environments, or releases, to trigger a build or deployment, retrieve build logs, or manage build artifacts.
 ---
 
 Use the Bamboo REST API directly to perform Bamboo operations. All configuration is provided through environment variables.
@@ -24,7 +24,7 @@ Choose the authentication method based on which variables are set:
 
 Always add `Accept: application/json`.
 
-## Operations
+## Projects
 
 ### List all projects
 
@@ -41,6 +41,8 @@ GET $BAMBOO_BASE_URL/rest/api/latest/project/{projectKey}?expand=plans.plan
 ```
 
 Returns project details including its plans.
+
+## Plans
 
 ### List all plans
 
@@ -66,11 +68,29 @@ GET $BAMBOO_BASE_URL/rest/api/latest/plan/{planKey}/branch?max-result=1000
 
 Returns a list of branches under `branches.branch`, each with `key`, `name`, and `enabled`.
 
+### Get a specific branch
+
+```
+GET $BAMBOO_BASE_URL/rest/api/latest/plan/{planKey}/branch/{branchName}
+```
+
+### Create a branch plan
+
+```
+POST $BAMBOO_BASE_URL/rest/api/latest/plan/{planKey}/branch/{branchName}?vcsBranch={vcsBranchName}
+```
+
+Creates a new branch plan for the given VCS branch.
+
+## Build Results
+
 ### List build results for a plan
 
 ```
 GET $BAMBOO_BASE_URL/rest/api/latest/result/{planKey}?expand=results.result&max-result={maxResults}
 ```
+
+Optional filter: `?buildstate=successful` or `?buildstate=failed`.
 
 Returns build results under `results.result`, each with `buildNumber`, `key`, `successful`, `finished`, `lifeCycleState`, and `buildRelativeTime`.
 
@@ -90,25 +110,61 @@ Returns full build result including stages, test counts (`successfulTestCount`, 
 GET $BAMBOO_BASE_URL/rest/api/latest/result/{planKey}/latest?expand=stages.stage,changes.change
 ```
 
-### Queue (trigger) a build
+### Add a label to a build result
 
-**Default branch:**
+```
+POST $BAMBOO_BASE_URL/rest/api/latest/result/{buildResultKey}/label
+Content-Type: application/json
+
+{ "name": "<labelName>" }
+```
+
+### Add a comment to a build result
+
+```
+POST $BAMBOO_BASE_URL/rest/api/latest/result/{buildResultKey}/comment
+Content-Type: application/json
+
+{ "content": "<comment text>" }
+```
+
+## Build Artifacts
+
+### List artifacts for a build result
+
+```
+GET $BAMBOO_BASE_URL/rest/api/latest/result/{buildResultKey}/artifact
+```
+
+Returns a list of artifacts including their names and download links.
+
+## Queue (Trigger Builds)
+
+### Queue a build for the default branch
 
 ```
 POST $BAMBOO_BASE_URL/rest/api/latest/queue/{planKey}
 ```
 
-**Specific branch:**
+### Queue a build for a specific branch
 
 ```
 POST $BAMBOO_BASE_URL/rest/api/latest/queue/{planKey}/branch/{encodedBranchName}
 ```
 
-URL-encode the branch name. Returns queue response with `buildNumber`, `buildResultKey`, `triggerReason`, and `link.href`.
+URL-encode the branch name. Both endpoints return a queue response with `buildNumber`, `buildResultKey`, `triggerReason`, and `link.href`.
 
-### Get build logs
+### Queue a build with custom variables
 
-**Via JSON (log entries in result):**
+```
+POST $BAMBOO_BASE_URL/rest/api/latest/queue/{planKey}?bamboo.variable.myVar=myValue
+```
+
+Pass build variables as query parameters with the `bamboo.variable.` prefix.
+
+## Build Logs
+
+### Via JSON (log entries in result)
 
 ```
 GET $BAMBOO_BASE_URL/rest/api/latest/result/{buildResultKey}?expand=logEntries&max-result=10000
@@ -116,7 +172,7 @@ GET $BAMBOO_BASE_URL/rest/api/latest/result/{buildResultKey}?expand=logEntries&m
 
 If `logEntries.logEntry` is present and non-empty, join the `log` field of each entry with newlines.
 
-**Fallback – download raw log file:**
+### Download raw log file
 
 ```
 GET $BAMBOO_BASE_URL/download/{buildResultKey}/build_logs/{buildResultKey}.log
@@ -128,13 +184,87 @@ If that fails, try:
 GET $BAMBOO_BASE_URL/browse/{buildResultKey}/log
 ```
 
-**Job-specific logs:**
+### Job-specific logs
 
 ```
 GET $BAMBOO_BASE_URL/download/{buildResultKey}/build_logs/{jobKey}.log
 ```
 
 `jobKey` is the key of the individual job within the build (e.g. `MYPROJ-MYPLAN-JOB1`).
+
+## Deployment Projects
+
+### List all deployment projects
+
+```
+GET $BAMBOO_BASE_URL/rest/api/latest/deploy/project/all
+```
+
+Returns a list of deployment projects, each with `id`, `name`, and `planKey`.
+
+### Get a specific deployment project
+
+```
+GET $BAMBOO_BASE_URL/rest/api/latest/deploy/project/{deploymentProjectId}
+```
+
+Returns deployment project details including its environments.
+
+## Environments
+
+### List environments for a deployment project
+
+```
+GET $BAMBOO_BASE_URL/rest/api/latest/deploy/project/{deploymentProjectId}
+```
+
+Environments are returned under the `environments` array, each with `id`, `name`, and `deploymentProjectId`.
+
+## Release Versions
+
+### List release versions for a deployment project
+
+```
+GET $BAMBOO_BASE_URL/rest/api/latest/deploy/project/{deploymentProjectId}/versions
+```
+
+Returns release versions with their `id`, `name`, `creationDate`, and associated `planResultKey`.
+
+### Create a release version
+
+```
+POST $BAMBOO_BASE_URL/rest/api/latest/deploy/project/{deploymentProjectId}/version
+Content-Type: application/json
+
+{
+  "planResultKey": "<buildResultKey>",
+  "name": "<releaseName>"
+}
+```
+
+## Deployments
+
+### Trigger a deployment
+
+To deploy a release to an environment:
+
+1. Get the deployment project ID (from list or get deployment project)
+2. Get the environment ID from the deployment project's `environments`
+3. Get the version ID (from list release versions or create release)
+
+```
+POST $BAMBOO_BASE_URL/rest/api/latest/queue/deployment?environmentId={environmentId}&versionId={versionId}
+```
+
+Returns the deployment result with `deploymentResultId` and `link.href`.
+
+### List deployments to an environment
+
+```
+GET $BAMBOO_BASE_URL/rest/api/latest/deploy/environment/{environmentId}/results
+```
+
+Returns recent deployment results for the environment.
 
 ## Error handling
 
