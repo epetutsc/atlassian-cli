@@ -238,9 +238,11 @@ Content-Type: application/json
 
 {
   "planResultKey": "<buildResultKey>",
-  "name": "<releaseName>"
+  "name": "release-1.0"
 }
 ```
+
+The `name` field supports Bamboo plan variable substitution. Use `${bamboo.variable.name}` to dynamically insert plan variable values into the release name. For example: `"name": "release-${bamboo.buildNumber}"` creates a name like `release-42`.
 
 ## Deployments
 
@@ -256,7 +258,15 @@ To deploy a release to an environment:
 POST $BAMBOO_BASE_URL/rest/api/latest/queue/deployment?environmentId={environmentId}&versionId={versionId}
 ```
 
-Returns the deployment result with `deploymentResultId` and `link.href`.
+Returns `deploymentResultId` and `link.href` to the result resource.
+
+### Check deployment status
+
+```
+GET $BAMBOO_BASE_URL/rest/api/latest/deploy/result/{deploymentResultId}
+```
+
+Key response fields: `deploymentState` (`SUCCESS`, `FAILED`, `UNKNOWN`), `lifeCycleState` (`QUEUED`, `IN_PROGRESS`, `FINISHED`), `startedDate`, `finishedDate`.
 
 ### List deployments to an environment
 
@@ -265,6 +275,40 @@ GET $BAMBOO_BASE_URL/rest/api/latest/deploy/environment/{environmentId}/results
 ```
 
 Returns recent deployment results for the environment.
+
+## Deployment Queue
+
+### View the deployment queue
+
+```
+GET $BAMBOO_BASE_URL/rest/api/latest/queue/deployment
+```
+
+### View queued deployment details
+
+```
+GET $BAMBOO_BASE_URL/rest/api/latest/queue/deployment?expand=queuedDeployments
+```
+
+Returns details of all queued deployments including their `deploymentResultId`.
+
+### Remove a deployment from the queue
+
+```
+DELETE $BAMBOO_BASE_URL/rest/api/latest/queue/deployment/{deploymentResultId}
+```
+
+Returns HTTP 204 on success.
+
+## Build Queue
+
+### View the build queue
+
+```
+GET $BAMBOO_BASE_URL/rest/api/latest/queue
+```
+
+Returns builds currently in the queue. Add `?expand=queuedBuilds` to see details of each queued build.
 
 ## Error handling
 

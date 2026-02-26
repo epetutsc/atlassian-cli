@@ -45,19 +45,52 @@ Content-Type: application/json
     "project": { "key": "<projectKey>" },
     "summary": "<summary>",
     "issuetype": { "name": "<issueType>" },
-    "description": "<description>",          // optional
-    "priority": { "name": "<priority>" },    // optional
-    "labels": ["<label1>", "<label2>"],      // optional
-    "fixVersions": [{ "name": "<version>" }] // optional
+    "description": "<description>",              // optional
+    "priority": { "name": "<priority>" },        // optional
+    "labels": ["<label1>", "<label2>"],          // optional
+    "fixVersions": [{ "name": "<version>" }],    // optional
+    "components": [{ "name": "<component>" }],   // optional
+    "duedate": "2024-12-31",                     // optional, YYYY-MM-DD
+    "timetracking": {                            // optional
+      "originalEstimate": "1d 2h",              // formats: "2h", "30m", "1d 4h 30m"
+      "remainingEstimate": "3h 25m"
+    }
   }
 }
 ```
 
 Returns `key`, `id`, and `self` (URL) of the newly created issue.
 
+**Custom fields** are referenced by ID: `"customfield_10000": <value>`. Use the fields metadata endpoint to discover field IDs and value formats. Common formats:
+- Text: `"customfield_10001": "text value"`
+- Number: `"customfield_10002": 42`
+- Date: `"customfield_10003": "2024-12-31"`
+- Select: `"customfield_10004": { "value": "option1" }`
+- Multi-select: `"customfield_10005": [{ "value": "opt1" }, { "value": "opt2" }]`
+- User: `"customfield_10006": { "name": "username" }`
+- URL: `"customfield_10007": "https://example.com"`
+
+### Create a sub-task
+
+Sub-tasks require a `parent` field and a sub-task issue type:
+
+```
+POST $JIRA_BASE_URL/rest/api/2/issue
+Content-Type: application/json
+
+{
+  "fields": {
+    "project": { "key": "<projectKey>" },
+    "parent": { "key": "<parentIssueKey>" },
+    "summary": "<summary>",
+    "issuetype": { "name": "Sub-task" }
+  }
+}
+```
+
 ### Update an issue
 
-Use `PUT` to update any combination of fields on an existing issue:
+Use `PUT` with `fields` to replace field values, or `update` with operations (`set`/`add`/`remove`) for multi-value fields:
 
 ```
 PUT $JIRA_BASE_URL/rest/api/2/issue/{issueKey}
@@ -70,6 +103,25 @@ Content-Type: application/json
     "priority": { "name": "<priority>" },
     "labels": ["<label1>"],
     "fixVersions": [{ "name": "<version>" }]
+  }
+}
+```
+
+**Using operations** (for fine-grained multi-value updates):
+
+```
+PUT $JIRA_BASE_URL/rest/api/2/issue/{issueKey}
+Content-Type: application/json
+
+{
+  "update": {
+    "summary": [{ "set": "<new summary>" }],
+    "components": [
+      { "remove": { "name": "Old Component" } },
+      { "add": { "name": "New Component" } }
+    ],
+    "labels": [{ "add": "newlabel" }],
+    "comment": [{ "add": { "body": "<comment added with the update>" } }]
   }
 }
 ```
@@ -144,6 +196,18 @@ POST $JIRA_BASE_URL/rest/api/2/issue/{issueKey}/comment
 Content-Type: application/json
 
 { "body": "<comment text>" }
+```
+
+To restrict comment visibility to a role or group:
+
+```json
+{
+  "body": "<comment text>",
+  "visibility": {
+    "type": "role",
+    "value": "Administrators"
+  }
+}
 ```
 
 Returns the created comment including its `id` and `created` timestamp.
@@ -327,13 +391,109 @@ GET $JIRA_BASE_URL/rest/api/2/field
 
 Returns all built-in and custom fields with their `id`, `name`, and `schema`.
 
-### Get issue create metadata
+### Get issue create metadata (Jira < 8.4)
 
 ```
 GET $JIRA_BASE_URL/rest/api/2/issue/createmeta?projectKeys={projectKey}&issuetypeNames={issueType}&expand=projects.issuetypes.fields
 ```
 
 Returns the fields required and available when creating an issue for a given project/issue type.
+
+### Get issue types for a project (Jira 8.4+)
+
+```
+GET $JIRA_BASE_URL/rest/api/2/issue/createmeta/{projectIdOrKey}/issuetypes
+```
+
+### Get fields for a specific issue type (Jira 8.4+)
+
+```
+GET $JIRA_BASE_URL/rest/api/2/issue/createmeta/{projectIdOrKey}/issuetypes/{issueTypeId}
+```
+
+Returns the fields available for creating an issue of that type.
+
+### Get edit metadata for an issue
+
+```
+GET $JIRA_BASE_URL/rest/api/2/issue/{issueKey}/editmeta
+```
+
+Returns the fields that can be edited on the issue, with their allowed values and operations.
+
+## Webhooks
+
+### List all webhooks
+
+```
+GET $JIRA_BASE_URL/rest/webhooks/1.0/webhook
+```
+
+### Get a specific webhook
+
+```
+GET $JIRA_BASE_URL/rest/webhooks/1.0/webhook/{webhookId}
+```
+
+### Create a webhook (Jira 9.x)
+
+```
+POST $JIRA_BASE_URL/rest/webhooks/1.0/webhook
+Content-Type: application/json
+
+{
+  "name": "<webhookName>",
+  "url": "https://example.com/webhook",
+  "events": [
+    "jira:issue_created",
+    "jira:issue_updated",
+    "jira:issue_deleted"
+  ],
+  "filters": {
+    "issue-related-events-section": "project = PROJ AND resolution = Fixed"
+  },
+  "excludeBody": false
+}
+```
+
+**Jira 10.x** uses a different URL and field names. POST to `/rest/jira-webhook/1.0/webhooks` with `FILTERS`, `DESCRIPTION`, and `EXCLUDE_BODY` in uppercase inside a `configuration` object:
+
+```
+POST $JIRA_BASE_URL/rest/jira-webhook/1.0/webhooks
+Content-Type: application/json
+
+{
+  "name": "<webhookName>",
+  "url": "https://example.com/webhook",
+  "events": [
+    "jira:issue_created",
+    "jira:issue_updated"
+  ],
+  "configuration": {
+    "FILTERS": "Project = JRA AND resolution = Fixed",
+    "EXCLUDE_BODY": "false",
+    "DESCRIPTION": "Optional description"
+  },
+  "active": "true"
+}
+```
+
+Common events: `jira:issue_created`, `jira:issue_updated`, `jira:issue_deleted`, `jira:worklog_updated`, `comment_created`, `comment_updated`, `comment_deleted`, `sprint_created`, `sprint_started`, `sprint_closed`.
+
+### Update a webhook
+
+```
+PUT $JIRA_BASE_URL/rest/webhooks/1.0/webhook/{webhookId}
+Content-Type: application/json
+
+{ /* same body as create */ }
+```
+
+### Delete a webhook
+
+```
+DELETE $JIRA_BASE_URL/rest/webhooks/1.0/webhook/{webhookId}
+```
 
 ## Agile (Jira Software) API
 

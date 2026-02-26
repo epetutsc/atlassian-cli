@@ -26,6 +26,26 @@ Always add `Accept: application/json` and, for write requests, `Content-Type: ap
 
 ## Page Operations
 
+### Browse all content
+
+```
+GET $CONFLUENCE_BASE_URL/rest/api/content?type=page&spaceKey={spaceKey}&limit={limit}&start={start}&expand=body.storage,version,space
+```
+
+Returns all content matching the filters. Use `_links.next` from the response to fetch the next page of results.
+
+### Scan pages efficiently (Confluence 7.18+)
+
+```
+GET $CONFLUENCE_BASE_URL/rest/api/content/scan?spaceKey={spaceKey}&type=page&limit={limit}
+```
+
+More performant than the standard browse endpoint. Use `nextCursor` from the response to paginate:
+
+```
+GET $CONFLUENCE_BASE_URL/rest/api/content/scan?cursor={nextCursor}&limit={limit}
+```
+
 ### Create a page
 
 ```
@@ -264,6 +284,170 @@ GET $CONFLUENCE_BASE_URL/rest/api/search?cql={encodedCQL}&limit={limit}&start={s
 ```
 
 Returns all content types (pages, blog posts, comments, attachments) matching the CQL query.
+
+## Blog Posts
+
+### Create a blog post
+
+```
+POST $CONFLUENCE_BASE_URL/rest/api/content
+Content-Type: application/json
+
+{
+  "type": "blogpost",
+  "title": "<title>",
+  "space": { "key": "<spaceKey>" },
+  "body": {
+    "storage": {
+      "value": "<body content in XHTML storage format>",
+      "representation": "storage"
+    }
+  }
+}
+```
+
+### List blog posts in a space
+
+```
+GET $CONFLUENCE_BASE_URL/rest/api/content?type=blogpost&spaceKey={spaceKey}&limit={limit}&start={start}
+```
+
+### Update and delete blog posts
+
+Use the same endpoints as pages (`PUT /rest/api/content/{id}` and `DELETE /rest/api/content/{id}`). Always increment `version.number` by 1 for updates.
+
+## Descendants
+
+### Get all descendants of a page
+
+```
+GET $CONFLUENCE_BASE_URL/rest/api/content/{pageId}/descendant
+```
+
+Returns all descendant content (pages, attachments, comments) grouped by type.
+
+### Get descendant pages only
+
+```
+GET $CONFLUENCE_BASE_URL/rest/api/content/{pageId}/descendant/page
+```
+
+## Content Properties
+
+### List properties on content
+
+```
+GET $CONFLUENCE_BASE_URL/rest/api/content/{contentId}/property
+```
+
+### Get a specific property
+
+```
+GET $CONFLUENCE_BASE_URL/rest/api/content/{contentId}/property/{propertyKey}
+```
+
+### Create a property
+
+```
+POST $CONFLUENCE_BASE_URL/rest/api/content/{contentId}/property
+Content-Type: application/json
+
+{
+  "key": "<propertyKey>",
+  "value": <any valid JSON: object, array, string, or number>
+}
+```
+
+### Update a property
+
+```
+PUT $CONFLUENCE_BASE_URL/rest/api/content/{contentId}/property/{propertyKey}
+Content-Type: application/json
+
+{
+  "key": "<propertyKey>",
+  "value": <updated JSON value>,
+  "version": { "number": <currentVersion + 1> }
+}
+```
+
+### Delete a property
+
+```
+DELETE $CONFLUENCE_BASE_URL/rest/api/content/{contentId}/property/{propertyKey}
+```
+
+## Space Properties
+
+### List properties for a space
+
+```
+GET $CONFLUENCE_BASE_URL/rest/api/space/{spaceKey}/property
+```
+
+### Get a specific space property
+
+```
+GET $CONFLUENCE_BASE_URL/rest/api/space/{spaceKey}/property/{propertyKey}
+```
+
+### Create a space property
+
+```
+POST $CONFLUENCE_BASE_URL/rest/api/space/{spaceKey}/property
+Content-Type: application/json
+
+{
+  "key": "<propertyKey>",
+  "value": <any valid JSON: object, array, string, or number>
+}
+```
+
+### Update a space property
+
+```
+PUT $CONFLUENCE_BASE_URL/rest/api/space/{spaceKey}/property/{propertyKey}
+Content-Type: application/json
+
+{
+  "key": "<propertyKey>",
+  "value": <updated JSON value>,
+  "version": { "number": <currentVersion + 1> }
+}
+```
+
+## Restrictions
+
+### Get restrictions on content
+
+```
+GET $CONFLUENCE_BASE_URL/rest/api/content/{contentId}/restriction/byOperation
+```
+
+Returns read and update restrictions for the content, listing which users and groups are allowed.
+
+### Add a restriction
+
+```
+POST $CONFLUENCE_BASE_URL/rest/api/content/{contentId}/restriction
+Content-Type: application/json
+
+[
+  {
+    "operation": "read",
+    "restrictions": {
+      "user": [{ "type": "known", "username": "<username>" }],
+      "group": [{ "type": "group", "name": "<groupName>" }]
+    }
+  }
+]
+```
+
+### Delete restrictions (make content unrestricted)
+
+```
+DELETE $CONFLUENCE_BASE_URL/rest/api/content/{contentId}/restriction
+```
 
 ## Error handling
 
